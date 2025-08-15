@@ -622,7 +622,7 @@ export function AddTransactionForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="No planned expense">
                           <span className="text-muted-foreground">No planned expense</span>
                         </SelectItem>
                         {availablePlannedExpenses.map((expense) => (
