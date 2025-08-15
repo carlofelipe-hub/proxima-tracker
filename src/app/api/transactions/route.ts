@@ -41,6 +41,12 @@ export async function GET(request: NextRequest) {
             type: true,
           },
         },
+        toWallet: {
+          select: {
+            name: true,
+            type: true,
+          },
+        },
       },
       orderBy: {
         date: "desc",
@@ -57,6 +63,7 @@ export async function GET(request: NextRequest) {
     const transactionsWithFormattedAmounts = transactions.map(transaction => ({
       ...transaction,
       amount: Number(transaction.amount),
+      transferFee: transaction.transferFee ? Number(transaction.transferFee) : null,
     }))
 
     return NextResponse.json({
@@ -122,6 +129,12 @@ export async function POST(request: NextRequest) {
               type: true,
             },
           },
+          toWallet: {
+            select: {
+              name: true,
+              type: true,
+            },
+          },
         },
       })
 
@@ -143,6 +156,7 @@ export async function POST(request: NextRequest) {
       return {
         ...transaction,
         amount: Number(transaction.amount),
+        transferFee: transaction.transferFee ? Number(transaction.transferFee) : null,
       }
     })
 

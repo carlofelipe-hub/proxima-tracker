@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/currency"
 import { TransactionType } from "@prisma/client"
 import { motion } from "framer-motion"
-import { ArrowUpCircle, ArrowDownCircle, Calendar, Wallet } from "lucide-react"
+import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Calendar, Wallet } from "lucide-react"
 import { format } from "date-fns"
 
 interface Transaction {
@@ -19,6 +19,11 @@ interface Transaction {
     name: string
     type: string
   }
+  toWallet?: {
+    name: string
+    type: string
+  }
+  transferFee?: number
 }
 
 interface TransactionListProps {
@@ -108,6 +113,8 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                     >
                       {transaction.type === TransactionType.INCOME ? (
                         <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                      ) : transaction.type === TransactionType.TRANSFER ? (
+                        <ArrowRightLeft className="h-5 w-5 text-blue-600" />
                       ) : (
                         <ArrowDownCircle className="h-5 w-5 text-red-600" />
                       )}
@@ -119,10 +126,20 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                       transition={{ delay: index * 0.1 + 0.4, duration: 0.3 }}
                     >
                       <Badge 
-                        variant={transaction.type === TransactionType.INCOME ? "default" : "destructive"}
+                        variant={
+                          transaction.type === TransactionType.INCOME 
+                            ? "default" 
+                            : transaction.type === TransactionType.TRANSFER 
+                            ? "secondary" 
+                            : "destructive"
+                        }
                         className="text-xs"
                       >
-                        {transaction.type === TransactionType.INCOME ? "Income" : "Expense"}
+                        {transaction.type === TransactionType.INCOME 
+                          ? "Income" 
+                          : transaction.type === TransactionType.TRANSFER 
+                          ? "Transfer" 
+                          : "Expense"}
                       </Badge>
                     </motion.div>
                   </div>
@@ -150,7 +167,15 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                     </div>
                     <div className="flex items-center gap-1">
                       <Wallet className="h-3 w-3" />
-                      {transaction.wallet.name}
+                      {transaction.type === TransactionType.TRANSFER && transaction.toWallet ? (
+                        <span>
+                          {transaction.category === "Transfer Out" ? `${transaction.wallet.name} → ${transaction.toWallet.name}` : 
+                           transaction.category === "Transfer In" ? `${transaction.toWallet.name} → ${transaction.wallet.name}` :
+                           transaction.wallet.name}
+                        </span>
+                      ) : (
+                        transaction.wallet.name
+                      )}
                     </div>
                   </motion.div>
                 </div>
@@ -161,13 +186,23 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.7, duration: 0.4 }}
                 >
-                  <div className={`text-lg font-bold ${
-                    transaction.type === TransactionType.INCOME 
-                      ? "text-green-600" 
-                      : "text-red-600"
-                  }`}>
-                    {transaction.type === TransactionType.INCOME ? "+" : "-"}
-                    {formatCurrency(transaction.amount)}
+                  <div className="space-y-1">
+                    <div className={`text-lg font-bold ${
+                      transaction.type === TransactionType.INCOME 
+                        ? "text-green-600" 
+                        : transaction.type === TransactionType.TRANSFER
+                        ? "text-blue-600"
+                        : "text-red-600"
+                    }`}>
+                      {transaction.type === TransactionType.INCOME ? "+" : 
+                       transaction.type === TransactionType.TRANSFER ? "" : "-"}
+                      {formatCurrency(transaction.amount)}
+                    </div>
+                    {transaction.type === TransactionType.TRANSFER && transaction.transferFee && transaction.transferFee > 0 && (
+                      <div className="text-xs text-red-600">
+                        Fee: {formatCurrency(transaction.transferFee)}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </div>

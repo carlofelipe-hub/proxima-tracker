@@ -80,32 +80,41 @@ model Wallet {
   updatedAt   DateTime    @updatedAt
   userId      String
 
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
-  incomeSources   IncomeSource[]
-  plannedExpenses PlannedExpense[]
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  transfersTo       Transaction[]  @relation("TransferDestination")
+  incomeSources     IncomeSource[]
+  plannedExpenses   PlannedExpense[]
 
   @@index([userId])
 }
 
 model Transaction {
-  id          String          @id @default(cuid())
-  amount      Decimal         @db.Decimal(15, 2)
-  type        TransactionType
-  category    String
-  description String?
-  date        DateTime        @default(now())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  userId      String
-  walletId    String
+  id              String          @id @default(cuid())
+  amount          Decimal         @db.Decimal(15, 2)
+  type            TransactionType
+  category        String
+  description     String?
+  date            DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  userId          String
+  walletId        String
+  
+  // Transfer-specific fields
+  toWalletId      String?         // Destination wallet for transfers
+  transferFee     Decimal?        @db.Decimal(15, 2) // Optional transfer fee
+  transferId      String?         // Groups related transfer transactions
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  toWallet Wallet? @relation("TransferDestination", fields: [toWalletId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([walletId])
+  @@index([toWalletId])
   @@index([date])
+  @@index([transferId])
 }
 
 model Category {
