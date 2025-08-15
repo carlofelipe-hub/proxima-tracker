@@ -79,7 +79,7 @@ export function IncomeSourceSetup({
       amount: "",
       frequency: PayFrequency.MONTHLY,
       nextPayDate: "",
-      walletId: "",
+      walletId: "none",
     },
   })
 
@@ -95,7 +95,7 @@ export function IncomeSourceSetup({
         body: JSON.stringify({
           ...data,
           amount: parseFloat(data.amount),
-          walletId: data.walletId || undefined,
+          walletId: data.walletId === "none" ? undefined : data.walletId || undefined,
         }),
       })
 
@@ -292,7 +292,7 @@ export function IncomeSourceSetup({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specific wallet</SelectItem>
+                        <SelectItem value="none">No specific wallet</SelectItem>
                         {wallets.map((wallet) => (
                           <SelectItem key={wallet.id} value={wallet.id}>
                             {wallet.name} ({wallet.type})

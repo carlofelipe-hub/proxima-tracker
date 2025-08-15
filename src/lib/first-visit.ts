@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 const DASHBOARD_VISITED_KEY = 'dashboard-visited'
 
@@ -15,10 +15,10 @@ export function useFirstDashboardVisit() {
     setIsLoaded(true)
   }, [])
 
-  const markDashboardVisited = () => {
+  const markDashboardVisited = useCallback(() => {
     localStorage.setItem(DASHBOARD_VISITED_KEY, 'true')
     setIsFirstVisit(false)
-  }
+  }, [])
 
   return {
     isFirstVisit: isFirstVisit && isLoaded,

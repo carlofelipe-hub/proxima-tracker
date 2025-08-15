@@ -103,12 +103,14 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    fetchWallets()
-    fetchTransactions()
-    checkActiveBudget()
-    // Mark dashboard as visited on first load
-    markDashboardVisited()
-  }, [markDashboardVisited])
+    if (session?.user?.id) {
+      fetchWallets()
+      fetchTransactions()
+      checkActiveBudget()
+      // Mark dashboard as visited on first load
+      markDashboardVisited()
+    }
+  }, [session?.user?.id, markDashboardVisited])
 
   if (status === "loading") {
     return (
