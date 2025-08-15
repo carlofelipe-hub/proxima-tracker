@@ -1,0 +1,243 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { useSession } from "next-auth/react"
+import { redirect } from "next/navigation"
+import { SidebarNav } from "@/components/navigation/sidebar-nav"
+import { TransactionList } from "@/components/transactions/transaction-list"
+import { AddTransactionForm } from "@/components/transactions/add-transaction-form"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Receipt, TrendingUp, TrendingDown, Calendar } from "lucide-react"
+
+interface Transaction {
+  id: string
+  amount: number
+  type: "INCOME" | "EXPENSE"
+  category: string
+  description: string
+  date: string
+  walletId: string
+  wallet: {
+    name: string
+    type: string
+  }
+}
+
+interface TransactionStats {
+  totalIncome: number
+  totalExpenses: number
+  netBalance: number
+  transactionCount: number
+}
+
+interface Wallet {
+  id: string
+  name: string
+  type: string
+}
+
+export default function TransactionsPage() {
+  const { data: session, status } = useSession()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [wallets, setWallets] = useState<Wallet[]>([])
+  const [stats, setStats] = useState<TransactionStats>({
+    totalIncome: 0,
+    totalExpenses: 0,
+    netBalance: 0,
+    transactionCount: 0
+  })
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const calculateStats = useCallback((transactions: Transaction[]) => {
+    const totalIncome = transactions
+      .filter(t => t.type === "INCOME")
+      .reduce((sum, t) => sum + t.amount, 0)
+    
+    const totalExpenses = transactions
+      .filter(t => t.type === "EXPENSE")
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    setStats({
+      totalIncome,
+      totalExpenses,
+      netBalance: totalIncome - totalExpenses,
+      transactionCount: transactions.length
+    })
+  }, [])
+
+  const fetchWallets = useCallback(async () => {
+    try {
+      const response = await fetch("/api/wallets")
+      if (response.ok) {
+        const data = await response.json()
+        setWallets(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch wallets:", error)
+    }
+  }, [])
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/transactions")
+      if (response.ok) {
+        const data = await response.json()
+        setTransactions(data.transactions)
+        calculateStats(data.transactions)
+      }
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [calculateStats])
+
+  useEffect(() => {
+    if (session) {
+      fetchWallets()
+      fetchTransactions()
+    }
+  }, [session, fetchWallets, fetchTransactions])
+
+  if (status === "loading") {
+    return <div>Loading...</div>
+  }
+
+  if (!session) {
+    redirect("/auth/signin")
+  }
+
+  const handleTransactionAdded = () => {
+    fetchTransactions()
+  }
+
+  const formatCurrency = (amount: number) => {
+    return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+  }
+
+  return (
+    <>
+      <SidebarNav 
+        onAddTransaction={() => setIsAddTransactionOpen(true)}
+      />
+      
+      <div className="min-h-screen bg-background lg:ml-80">
+        <main className="container mx-auto px-4 py-6 lg:py-6 pt-20 lg:pt-6 space-y-6">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">Transactions</h1>
+          <p className="text-muted-foreground">
+            Track your income and expenses
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(stats.totalIncome)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(stats.totalExpenses)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
+              <TrendingUp className={`h-4 w-4 ${stats.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${stats.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(stats.netBalance)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stats.transactionCount}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Add Transaction Button - Desktop */}
+        <div className="hidden md:block">
+          <Button onClick={() => setIsAddTransactionOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
+        </div>
+
+        {/* Transactions List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Recent Transactions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading transactions...</p>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                  <Receipt className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">No transactions yet</h3>
+                  <p className="text-muted-foreground">
+                    Add your first transaction to start tracking
+                  </p>
+                </div>
+                <Button onClick={() => setIsAddTransactionOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Transaction
+                </Button>
+              </div>
+            ) : (
+              <TransactionList 
+                transactions={transactions}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Add Transaction Form */}
+        <AddTransactionForm 
+          open={isAddTransactionOpen}
+          onOpenChange={setIsAddTransactionOpen}
+          onSuccess={handleTransactionAdded}
+          wallets={wallets}
+        />
+        </main>
+      </div>
+    </>
+  )
+}
