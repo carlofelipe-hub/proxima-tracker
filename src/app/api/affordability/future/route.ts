@@ -19,6 +19,14 @@ interface FutureIncomeProjection {
     date: string
     type: 'salary' | 'freelance' | 'business' | 'other'
   }>
+  incomeSourcesFound: number
+  incomeSourceDetails: Array<{
+    name: string
+    amount: number
+    frequency: string
+    nextPayDate: string
+    isActive: boolean
+  }>
   projectedBalance: number
   canAfford: boolean
   confidenceLevel: 'high' | 'medium' | 'low'
@@ -41,9 +49,13 @@ export async function POST(request: NextRequest) {
     const target = new Date(targetDate)
     const now = new Date()
     
-    if (target <= now) {
+    // Allow today or future dates (set now to start of day for fair comparison)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate())
+    
+    if (targetDay < today) {
       return NextResponse.json({
-        error: "Target date must be in the future"
+        error: "Target date must be today or in the future"
       }, { status: 400 })
     }
 
@@ -126,29 +138,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate projected balance at target date
-    const projectedBalance = currentTotalBalance + totalProjectedIncome
-
-    // Determine if expense can be afforded
-    const canAfford = projectedBalance >= amount
+    // Calculate projected balance at target date (before considering expenses)
+    const grossProjectedBalance = currentTotalBalance + totalProjectedIncome
 
     // Calculate confidence level based on various factors
     let confidenceLevel: 'high' | 'medium' | 'low' = 'high'
     const riskFactors: string[] = []
     const recommendations: string[] = []
 
-    // Risk assessment
-    const daysUntilTarget = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (daysUntilTarget > 90) {
-      confidenceLevel = 'medium'
-      riskFactors.push("Long-term projection (>3 months) has higher uncertainty")
-    }
-    
-    if (daysUntilTarget > 180) {
-      confidenceLevel = 'low'
-      riskFactors.push("Very long-term projection (>6 months) is highly uncertain")
-    }
+    // Calculate days until target for later use
+    const daysUntilTarget = Math.max(0, Math.ceil((targetDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
 
     if (incomeSources.length === 0) {
       confidenceLevel = 'low'
@@ -181,9 +180,10 @@ export async function POST(request: NextRequest) {
       sum + Number(expense.amount), 0
     )
 
-    const projectedRoutineExpenses = (monthlyExpenseAverage / 30) * daysUntilTarget
+    const projectedRoutineExpenses = daysUntilTarget > 0 ? (monthlyExpenseAverage / 30) * daysUntilTarget : 0
 
-    // Get planned expenses between now and target date
+    // Get ALL future planned expenses (not just between now and target)
+    // This ensures we consider future financial commitments even for today's expenses
     const plannedExpenses = await prisma.plannedExpense.findMany({
       where: {
         userId,
@@ -191,8 +191,7 @@ export async function POST(request: NextRequest) {
           in: ['PLANNED', 'SAVED'], // Only consider planned or saved expenses
         },
         targetDate: {
-          gte: now,
-          lte: target,
+          gte: today, // All future expenses from today onwards
         },
       },
       select: {
@@ -204,15 +203,56 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const totalPlannedExpenses = plannedExpenses.reduce((sum, expense) => 
-      sum + Number(expense.amount), 0
+    // Separate planned expenses into different time periods for better analysis
+    const upcomingPlannedExpenses = plannedExpenses.filter(pe => 
+      new Date(pe.targetDate) <= target
+    )
+    const laterPlannedExpenses = plannedExpenses.filter(pe => 
+      new Date(pe.targetDate) > target
     )
 
-    const projectedExpenses = projectedRoutineExpenses + totalPlannedExpenses
-    const adjustedProjectedBalance = projectedBalance - projectedExpenses
+    const upcomingPlannedExpensesTotal = upcomingPlannedExpenses.reduce((sum, expense) => 
+      sum + Number(expense.amount), 0
+    )
+    const laterPlannedExpensesTotal = laterPlannedExpenses.reduce((sum, expense) => 
+      sum + Number(expense.amount), 0
+    )
+    const totalPlannedExpenses = upcomingPlannedExpensesTotal + laterPlannedExpensesTotal
+
+    // For affordability calculation, consider immediate expenses plus a portion of future ones
+    // This ensures we don't spend money that's already committed to future plans
+    const projectedExpenses = projectedRoutineExpenses + upcomingPlannedExpensesTotal
+    const futureCommitments = laterPlannedExpensesTotal
+    
+    // Net balance after immediate expenses and commitments
+    const netProjectedBalance = grossProjectedBalance - projectedExpenses - (futureCommitments * 0.8) // 80% weight for future commitments
+
+    // Determine if expense can be afforded (after accounting for all projected expenses)
+    const canAfford = netProjectedBalance >= amount
+
+    // Risk assessment based on timeline
+    if (daysUntilTarget === 0) {
+      // For today, we focus on current balance but consider future commitments
+      riskFactors.push("Same-day expense relies on current available funds")
+      if (futureCommitments > 0) {
+        riskFactors.push(`You have ₱${futureCommitments.toLocaleString()} in future planned expenses to consider`)
+      }
+      recommendations.push("For today's expenses, ensure you have sufficient current balance")
+      if (futureCommitments > amount * 2) {
+        recommendations.push("Consider if this expense conflicts with your future financial plans")
+      }
+    } else if (daysUntilTarget > 90) {
+      confidenceLevel = 'medium'
+      riskFactors.push("Long-term projection (>3 months) has higher uncertainty")
+    }
+    
+    if (daysUntilTarget > 180) {
+      confidenceLevel = 'low'
+      riskFactors.push("Very long-term projection (>6 months) is highly uncertain")
+    }
 
     // Adjust confidence and recommendations based on spending patterns
-    if (adjustedProjectedBalance < amount) {
+    if (netProjectedBalance < amount) {
       confidenceLevel = 'low'
       riskFactors.push("Current spending patterns may prevent affordability")
       recommendations.push("Consider reducing daily expenses to meet your goal")
@@ -220,18 +260,25 @@ export async function POST(request: NextRequest) {
 
     // Generate AI-powered recommendations
     if (!canAfford) {
-      const shortfall = amount - projectedBalance
+      const shortfall = amount - netProjectedBalance
       recommendations.push(`You need an additional ₱${shortfall.toFixed(2)} to afford this expense`)
       
-      if (daysUntilTarget > 30) {
+      if (daysUntilTarget === 0) {
+        recommendations.push("For today's expense, consider using multiple wallets or postponing until you have sufficient funds")
+      } else if (daysUntilTarget > 30) {
         const monthlyExtra = shortfall / (daysUntilTarget / 30)
         recommendations.push(`Save an extra ₱${monthlyExtra.toFixed(2)} per month to reach your goal`)
+      } else if (daysUntilTarget > 0) {
+        const dailyExtra = shortfall / daysUntilTarget
+        recommendations.push(`Save an extra ₱${dailyExtra.toFixed(2)} per day to reach your goal`)
       }
     } else {
-      const buffer = projectedBalance - amount
+      const buffer = netProjectedBalance - amount
       const bufferPercentage = (buffer / amount) * 100
       
-      if (bufferPercentage < 20) {
+      if (daysUntilTarget === 0) {
+        recommendations.push("You can afford this expense today with your current balance")
+      } else if (bufferPercentage < 20) {
         recommendations.push("Consider saving a bit more for unexpected expenses")
       } else if (bufferPercentage > 100) {
         recommendations.push("You'll have plenty of buffer - this expense looks very affordable")
@@ -256,8 +303,16 @@ export async function POST(request: NextRequest) {
     const response: FutureIncomeProjection = {
       totalProjectedIncome,
       incomeBreakdown: projectedIncomes,
-      projectedBalance: adjustedProjectedBalance,
-      canAfford: adjustedProjectedBalance >= amount,
+      incomeSourcesFound: incomeSources.length,
+      incomeSourceDetails: incomeSources.map(source => ({
+        name: source.name,
+        amount: Number(source.amount),
+        frequency: source.frequency,
+        nextPayDate: source.nextPayDate.toISOString(),
+        isActive: source.isActive
+      })),
+      projectedBalance: netProjectedBalance,
+      canAfford,
       confidenceLevel,
       riskFactors,
       recommendations,
@@ -270,10 +325,30 @@ export async function POST(request: NextRequest) {
       targetDate: target.toISOString(),
       daysUntilTarget,
       projectedExpenses,
+      // Breakdown for debugging
+      balanceBreakdown: {
+        currentBalance: currentTotalBalance,
+        projectedIncome: totalProjectedIncome,
+        grossProjectedBalance: grossProjectedBalance,
+        projectedExpenses: projectedExpenses,
+        futureCommitments: futureCommitments,
+        futureCommitmentsWeight: futureCommitments * 0.8,
+        netProjectedBalance: netProjectedBalance,
+        availableForExpense: netProjectedBalance
+      },
       expenseBreakdown: {
         routineExpenses: projectedRoutineExpenses,
-        plannedExpenses: totalPlannedExpenses,
-        plannedExpenseDetails: plannedExpenses.map(expense => ({
+        upcomingPlannedExpenses: upcomingPlannedExpensesTotal,
+        laterPlannedExpenses: laterPlannedExpensesTotal,
+        totalPlannedExpenses: totalPlannedExpenses,
+        upcomingPlannedExpenseDetails: upcomingPlannedExpenses.map(expense => ({
+          title: expense.title,
+          amount: Number(expense.amount),
+          targetDate: expense.targetDate.toISOString(),
+          category: expense.category,
+          priority: expense.priority,
+        })),
+        laterPlannedExpenseDetails: laterPlannedExpenses.map(expense => ({
           title: expense.title,
           amount: Number(expense.amount),
           targetDate: expense.targetDate.toISOString(),

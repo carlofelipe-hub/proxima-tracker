@@ -105,16 +105,21 @@ model Transaction {
   toWalletId      String?         // Destination wallet for transfers
   transferFee     Decimal?        @db.Decimal(15, 2) // Optional transfer fee
   transferId      String?         // Groups related transfer transactions
+  
+  // Planned expense tracking
+  plannedExpenseId String?        // Link to planned expense (for EXPENSE transactions)
 
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  toWallet Wallet? @relation("TransferDestination", fields: [toWalletId], references: [id], onDelete: Cascade)
+  user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet          Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  toWallet        Wallet? @relation("TransferDestination", fields: [toWalletId], references: [id], onDelete: Cascade)
+  plannedExpense  PlannedExpense? @relation(fields: [plannedExpenseId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([walletId])
   @@index([toWalletId])
   @@index([date])
   @@index([transferId])
+  @@index([plannedExpenseId])
 }
 
 model Category {
@@ -181,25 +186,30 @@ model BudgetPeriod {
 }
 
 model PlannedExpense {
-  id          String            @id @default(cuid())
-  title       String
-  amount      Decimal           @db.Decimal(15, 2)
-  category    String
-  description String?
-  targetDate  DateTime
-  priority    ExpensePriority   @default(MEDIUM)
-  status      PlannedExpenseStatus @default(PLANNED)
-  walletId    String?           // Preferred wallet for this expense
-  userId      String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  title           String
+  amount          Decimal           @db.Decimal(15, 2)
+  spentAmount     Decimal           @db.Decimal(15, 2) @default(0) // Track how much has been spent
+  category        String
+  description     String?
+  targetDate      DateTime
+  priority        ExpensePriority   @default(MEDIUM)
+  confidenceLevel ConfidenceLevel   @default(MEDIUM)
+  status          PlannedExpenseStatus @default(PLANNED)
+  walletId        String?           // Preferred wallet for this expense
+  userId          String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  lastConfidenceUpdate DateTime?     // Track when confidence was last calculated
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet Wallet? @relation(fields: [walletId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet       Wallet?       @relation(fields: [walletId], references: [id])
+  transactions Transaction[] // Related transactions that contribute to this planned expense
 
   @@index([userId])
   @@index([targetDate])
   @@index([status])
+  @@index([confidenceLevel])
 }
 
 // Enums
@@ -242,4 +252,10 @@ enum PlannedExpenseStatus {
   COMPLETED   // Expense has been made (converted to actual transaction)
   CANCELLED   // No longer planning this expense
   POSTPONED   // Delayed to a later date
+}
+
+enum ConfidenceLevel {
+  HIGH        // Very confident expense can be afforded
+  MEDIUM      // Moderately confident, some risk factors
+  LOW         // Low confidence, high risk of not affording
 }

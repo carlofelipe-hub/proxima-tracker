@@ -3,6 +3,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { ExpensePriority, PlannedExpenseStatus } from "@prisma/client"
+import { calculateConfidenceLevel } from "@/lib/confidence-calculator"
 
 const createPlannedExpenseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -83,6 +84,7 @@ export async function GET(request: NextRequest) {
     const formattedExpenses = plannedExpenses.map(expense => ({
       ...expense,
       amount: Number(expense.amount),
+      spentAmount: Number(expense.spentAmount),
     }))
 
     return NextResponse.json({
@@ -149,10 +151,36 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Calculate initial confidence level
+    try {
+      const confidenceResult = await calculateConfidenceLevel({
+        userId: session.user.id,
+        plannedExpenseId: plannedExpense.id,
+        targetAmount: validatedData.amount,
+        targetDate: new Date(validatedData.targetDate),
+        walletId: validatedData.walletId || undefined,
+      })
+
+      // Update the planned expense with the calculated confidence level
+      await prisma.plannedExpense.update({
+        where: { id: plannedExpense.id },
+        data: {
+          confidenceLevel: confidenceResult.confidenceLevel,
+          lastConfidenceUpdate: new Date(),
+        },
+      })
+
+      plannedExpense.confidenceLevel = confidenceResult.confidenceLevel
+    } catch (error) {
+      console.error("Failed to calculate initial confidence level:", error)
+      // Continue with default confidence level if calculation fails
+    }
+
     // Convert Decimal amount to number for JSON serialization
     const formattedExpense = {
       ...plannedExpense,
       amount: Number(plannedExpense.amount),
+      spentAmount: Number(plannedExpense.spentAmount),
     }
 
     return NextResponse.json(formattedExpense, { status: 201 })
@@ -234,10 +262,40 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    // Recalculate confidence level if amount, targetDate, or walletId changed
+    const shouldRecalculateConfidence = updateData.amount || updateData.targetDate || updateData.walletId !== undefined
+    
+    if (shouldRecalculateConfidence) {
+      try {
+        const confidenceResult = await calculateConfidenceLevel({
+          userId: session.user.id,
+          plannedExpenseId: updatedExpense.id,
+          targetAmount: Number(updatedExpense.amount),
+          targetDate: updatedExpense.targetDate,
+          walletId: updatedExpense.walletId || undefined,
+        })
+
+        // Update the confidence level
+        await prisma.plannedExpense.update({
+          where: { id },
+          data: {
+            confidenceLevel: confidenceResult.confidenceLevel,
+            lastConfidenceUpdate: new Date(),
+          },
+        })
+
+        updatedExpense.confidenceLevel = confidenceResult.confidenceLevel
+      } catch (error) {
+        console.error("Failed to recalculate confidence level:", error)
+        // Continue with existing confidence level if calculation fails
+      }
+    }
+
     // Convert Decimal amount to number for JSON serialization
     const formattedExpense = {
       ...updatedExpense,
       amount: Number(updatedExpense.amount),
+      spentAmount: Number(updatedExpense.spentAmount),
     }
 
     return NextResponse.json(formattedExpense)

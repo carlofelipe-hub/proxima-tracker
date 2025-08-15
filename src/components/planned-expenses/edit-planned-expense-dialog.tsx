@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -31,7 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPhilippineDateForInput, fromDateInputToPhilippineTime, toPhilippineTime } from "@/lib/timezone"
+import { getPhilippineDateForInput, fromDateInputToPhilippineTime, toPhilippineDate } from "@/lib/timezone"
+import { invalidateInsightsCache } from "@/lib/cached-insights"
 
 const editExpenseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -55,6 +57,7 @@ interface PlannedExpense {
   description?: string
   targetDate: string
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  confidenceLevel: "HIGH" | "MEDIUM" | "LOW"
   status: "PLANNED" | "SAVED" | "COMPLETED" | "CANCELLED" | "POSTPONED"
   wallet?: {
     id: string
@@ -63,6 +66,7 @@ interface PlannedExpense {
   }
   createdAt: string
   updatedAt: string
+  lastConfidenceUpdate?: string
 }
 
 interface EditPlannedExpenseDialogProps {
@@ -101,6 +105,19 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+  const getConfidenceBadge = (confidence: PlannedExpense['confidenceLevel']) => {
+    switch (confidence) {
+      case 'HIGH':
+        return <Badge className="bg-green-100 text-green-800">High Confidence</Badge>
+      case 'MEDIUM':
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium Confidence</Badge>
+      case 'LOW':
+        return <Badge variant="destructive">Low Confidence</Badge>
+      default:
+        return null
+    }
+  }
+
   const form = useForm<EditExpenseFormData>({
     resolver: zodResolver(editExpenseSchema),
     defaultValues: {
@@ -117,7 +134,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
   // Reset form when expense changes or dialog opens
   useEffect(() => {
     if (open) {
-      const targetDate = toPhilippineTime(expense.targetDate)
+      const targetDate = toPhilippineDate(expense.targetDate)
       const dateString = targetDate.toISOString().split('T')[0] // Format as YYYY-MM-DD for input
       
       form.reset({
@@ -157,6 +174,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
       if (response.ok) {
         setOpen(false)
         onExpenseUpdated()
+        invalidateInsightsCache() // Trigger insights cache invalidation
       } else {
         const error = await response.json()
         console.error("Error updating expense:", error)
@@ -296,6 +314,20 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Read-only Confidence Level Display */}
+            <div>
+              <FormLabel>Confidence Level (Auto-calculated)</FormLabel>
+              <div className="mt-2">
+                {getConfidenceBadge(expense.confidenceLevel)}
+                <p className="text-xs text-muted-foreground mt-1">
+                  This is automatically calculated based on your current budget and expenses.
+                  {expense.lastConfidenceUpdate && (
+                    <> Last updated: {new Date(expense.lastConfidenceUpdate).toLocaleDateString()}</>
+                  )}
+                </p>
+              </div>
             </div>
 
             <FormField

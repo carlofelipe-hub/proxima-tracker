@@ -4,7 +4,10 @@ import { useState, useEffect } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCurrency } from "@/lib/currency"
+import { AffordabilityChecker } from "@/components/ai/affordability-checker"
+import { Brain, Calculator } from "lucide-react"
 
 interface AffordabilityResult {
   canAfford: boolean
@@ -64,6 +67,7 @@ interface AffordabilityCheckProps {
   amount: number
   walletId?: string
   category?: string
+  description?: string
   onWalletSuggestion?: (walletId: string) => void
 }
 
@@ -71,10 +75,12 @@ export function AffordabilityCheck({
   amount, 
   walletId, 
   category,
+  description,
   onWalletSuggestion 
 }: AffordabilityCheckProps) {
   const [result, setResult] = useState<AffordabilityResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("traditional")
 
   useEffect(() => {
     const checkAffordability = async () => {
@@ -139,36 +145,66 @@ export function AffordabilityCheck({
     return <Badge variant="destructive">✗ Cannot Afford</Badge>
   }
 
-  return (
-    <div className="space-y-3">
-      <Alert variant={getAlertVariant()}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {getStatusBadge()}
-              <span className="text-sm font-medium">
-                {formatCurrency(amount)}
-              </span>
-            </div>
-            
-            <AlertDescription>
-              {result.message && (
-                <div className="mb-2">{result.message}</div>
-              )}
-              
-              {result.reason && (
-                <div className="text-sm opacity-90">{result.reason}</div>
-              )}
+  // Show AI insights by default if walletId is available
+  const shouldShowAI = walletId && amount > 0
 
-              {result.shortfall && (
-                <div className="text-sm mt-1">
-                  Short by: <span className="font-medium">{formatCurrency(result.shortfall)}</span>
+  if (!amount || amount <= 0) {
+    return null
+  }
+
+  return (
+    <div className="space-y-4 border-t pt-4">
+      <div className="flex items-center gap-2 mb-2">
+        <h3 className="text-sm font-medium">Affordability Analysis</h3>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="traditional" className="text-xs">
+            <Calculator className="h-3 w-3 mr-1" />
+            Quick Check
+          </TabsTrigger>
+          <TabsTrigger value="ai" disabled={!shouldShowAI} className="text-xs">
+            <Brain className="h-3 w-3 mr-1" />
+            AI Analysis
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="traditional" className="mt-4">
+          {isLoading ? (
+            <Alert>
+              <AlertDescription>Checking affordability...</AlertDescription>
+            </Alert>
+          ) : result ? (
+            <div className="space-y-3">
+              <Alert variant={getAlertVariant()}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      {getStatusBadge()}
+                      <span className="text-sm font-medium">
+                        {formatCurrency(amount)}
+                      </span>
+                    </div>
+                    
+                    <AlertDescription>
+                      {result.message && (
+                        <div className="mb-2">{result.message}</div>
+                      )}
+                      
+                      {result.reason && (
+                        <div className="text-sm opacity-90">{result.reason}</div>
+                      )}
+
+                      {result.shortfall && (
+                        <div className="text-sm mt-1">
+                          Short by: <span className="font-medium">{formatCurrency(result.shortfall)}</span>
+                        </div>
+                      )}
+                    </AlertDescription>
+                  </div>
                 </div>
-              )}
-            </AlertDescription>
-          </div>
-        </div>
-      </Alert>
+              </Alert>
 
       {/* Wallet Suggestions */}
       {result.suggestedWallets && result.suggestedWallets.length > 0 && (
@@ -321,20 +357,42 @@ export function AffordabilityCheck({
         </div>
       )}
 
-      {/* Suggestions */}
-      {result.suggestions && result.suggestions.length > 0 && (
-        <div className="space-y-1">
-          <div className="text-sm font-medium">Suggestions:</div>
-          <ul className="text-sm text-gray-600 space-y-1">
-            {result.suggestions.map((suggestion, index) => (
-              <li key={index} className="flex items-start gap-1">
-                <span className="text-xs mt-1">•</span>
-                <span>{suggestion}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+          {/* Suggestions */}
+          {result.suggestions && result.suggestions.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Suggestions:</div>
+              <ul className="text-sm text-gray-600 space-y-1">
+                {result.suggestions.map((suggestion, index) => (
+                  <li key={index} className="flex items-start gap-1">
+                    <span className="text-xs mt-1">•</span>
+                    <span>{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+            </div>
+          ) : null}
+        </TabsContent>
+
+        <TabsContent value="ai" className="mt-4">
+          {shouldShowAI ? (
+            <AffordabilityChecker
+              amount={amount}
+              category={category}
+              description={description}
+              walletId={walletId}
+              onResult={() => {}} // Optional callback
+            />
+          ) : (
+            <Alert>
+              <AlertDescription>
+                Please select a wallet and enter an amount to get AI-powered affordability analysis.
+              </AlertDescription>
+            </Alert>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -9,13 +9,13 @@ import { LoadingAnimation } from "@/components/ui/loading-animation"
 import { WalletCard } from "@/components/wallets/wallet-card"
 import { AddWalletForm } from "@/components/wallets/add-wallet-form"
 import { AddTransactionForm } from "@/components/transactions/add-transaction-form"
-import { TransactionList } from "@/components/transactions/transaction-list"
+import { TransactionTable } from "@/components/transactions/transaction-table"
 import { AIInsights } from "@/components/insights/ai-insights"
 import { SidebarNav } from "@/components/navigation/sidebar-nav"
 import { formatCurrency } from "@/lib/currency"
 import { useFirstDashboardVisit } from "@/lib/first-visit"
 import { motion } from "framer-motion"
-import { Plus, Wallet, TrendingUp, TrendingDown, PiggyBank, Calendar } from "lucide-react"
+import { Plus, Wallet, TrendingUp, TrendingDown, PiggyBank, Calendar, ArrowRight, ChevronUp, ChevronDown } from "lucide-react"
 import Link from "next/link"
 
 interface Wallet {
@@ -53,6 +53,9 @@ export default function DashboardPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [hasActiveBudget, setHasActiveBudget] = useState(false)
   const [isCheckingBudget, setIsCheckingBudget] = useState(true)
+  const [showAllTransactions, setShowAllTransactions] = useState(false)
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
+  const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false)
 
   const fetchWallets = async () => {
     try {
@@ -70,7 +73,7 @@ export default function DashboardPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch("/api/transactions?limit=10")
+      const response = await fetch("/api/transactions?limit=5")
       if (response.ok) {
         const data = await response.json()
         setTransactions(data.transactions)
@@ -79,6 +82,22 @@ export default function DashboardPage() {
       console.error("Error fetching transactions:", error)
     } finally {
       setIsLoadingTransactions(false)
+    }
+  }
+
+  const fetchAllTransactions = async () => {
+    setIsLoadingMoreTransactions(true)
+    try {
+      const response = await fetch("/api/transactions")
+      if (response.ok) {
+        const data = await response.json()
+        setAllTransactions(data.transactions)
+        setShowAllTransactions(true)
+      }
+    } catch (error) {
+      console.error("Error fetching all transactions:", error)
+    } finally {
+      setIsLoadingMoreTransactions(false)
     }
   }
 
@@ -100,6 +119,9 @@ export default function DashboardPage() {
   const handleTransactionSuccess = () => {
     fetchWallets() // Refresh wallets to update balances
     fetchTransactions() // Refresh transactions list
+    if (showAllTransactions) {
+      fetchAllTransactions() // Refresh all transactions if expanded
+    }
   }
 
   useEffect(() => {
@@ -202,17 +224,17 @@ export default function DashboardPage() {
           >
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Balance</CardTitle>
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                 >
-                  <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                  <PiggyBank className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </motion.div>
               </CardHeader>
               <CardContent>
                 <motion.div 
-                  className="text-2xl font-bold"
+                  className="text-lg sm:text-2xl font-bold"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
@@ -232,12 +254,12 @@ export default function DashboardPage() {
           >
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Wallets</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Wallets</CardTitle>
+                <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <motion.div 
-                  className="text-2xl font-bold"
+                  className="text-lg sm:text-2xl font-bold"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
@@ -257,12 +279,12 @@ export default function DashboardPage() {
           >
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Transactions</CardTitle>
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <motion.div 
-                  className="text-2xl font-bold"
+                  className="text-lg sm:text-2xl font-bold"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.5 }}
@@ -282,12 +304,12 @@ export default function DashboardPage() {
           >
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month</CardTitle>
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs sm:text-sm font-medium">This Month</CardTitle>
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <motion.div 
-                  className="text-2xl font-bold"
+                  className="text-lg sm:text-2xl font-bold"
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.5 }}
@@ -393,12 +415,88 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl md:text-2xl font-bold">Recent Transactions</h2>
+              <Link href="/transactions">
+                <Button variant="outline" size="sm" className="text-sm">
+                  View All
+                  <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </Link>
             </div>
 
-            <TransactionList 
-              transactions={transactions} 
-              isLoading={isLoadingTransactions} 
-            />
+            {isLoadingTransactions ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32"></div>
+                          <div className="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                        <div className="h-6 bg-gray-200 rounded w-20"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : transactions.length === 0 ? (
+              <Card className="p-6 text-center">
+                <div className="flex flex-col items-center space-y-4">
+                  <TrendingUp className="h-12 w-12 text-muted-foreground" />
+                  <div>
+                    <h3 className="text-lg font-semibold">No transactions yet</h3>
+                    <p className="text-muted-foreground">
+                      Add your first transaction to start tracking
+                    </p>
+                  </div>
+                  <Button onClick={() => setIsAddTransactionOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Transaction
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <TransactionTable 
+                  transactions={showAllTransactions ? allTransactions : transactions} 
+                  isLoading={false} 
+                />
+                
+                {/* Show More / Show Less Controls */}
+                <div className="flex justify-center pt-2">
+                  {!showAllTransactions && transactions.length >= 5 && totalTransactions > 5 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={fetchAllTransactions}
+                      disabled={isLoadingMoreTransactions}
+                    >
+                      {isLoadingMoreTransactions ? (
+                        "Loading..."
+                      ) : (
+                        <>
+                          View {totalTransactions - 5} more transactions
+                          <ChevronDown className="ml-1 h-3 w-3" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {showAllTransactions && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowAllTransactions(false)}
+                    >
+                      Show less
+                      <ChevronUp className="ml-1 h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - AI Insights */}

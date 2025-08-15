@@ -102,10 +102,10 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
           transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-3">
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
@@ -119,7 +119,7 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                         <ArrowDownCircle className="h-5 w-5 text-red-600" />
                       )}
                     </motion.div>
-                    <h3 className="font-semibold">{transaction.category}</h3>
+                    <h3 className="font-semibold text-sm sm:text-base truncate">{transaction.category}</h3>
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
@@ -146,7 +146,7 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   
                   {transaction.description && (
                     <motion.p 
-                      className="text-sm text-muted-foreground mb-2"
+                      className="text-xs sm:text-sm text-muted-foreground mb-2 truncate"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.1 + 0.5, duration: 0.3 }}
@@ -156,38 +156,40 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   )}
                   
                   <motion.div 
-                    className="flex items-center gap-4 text-xs text-muted-foreground"
+                    className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-muted-foreground"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 + 0.6, duration: 0.3 }}
                   >
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatPhilippineDateTime(transaction.date)}
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{formatPhilippineDateTime(transaction.date)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Wallet className="h-3 w-3" />
-                      {transaction.type === TransactionType.TRANSFER && transaction.toWallet ? (
-                        <span>
-                          {transaction.category === "Transfer Out" ? `${transaction.wallet.name} → ${transaction.toWallet.name}` : 
-                           transaction.category === "Transfer In" ? `${transaction.toWallet.name} → ${transaction.wallet.name}` :
-                           transaction.wallet.name}
-                        </span>
-                      ) : (
-                        transaction.wallet.name
-                      )}
+                      <Wallet className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {transaction.type === TransactionType.TRANSFER && transaction.toWallet ? (
+                          <>
+                            {transaction.category === "Transfer Out" ? `${transaction.wallet.name} → ${transaction.toWallet.name}` : 
+                             transaction.category === "Transfer In" ? `${transaction.toWallet.name} → ${transaction.wallet.name}` :
+                             transaction.wallet.name}
+                          </>
+                        ) : (
+                          transaction.wallet.name
+                        )}
+                      </span>
                     </div>
                   </motion.div>
                 </div>
                 
                 <motion.div 
-                  className="text-right"
+                  className="text-right flex-shrink-0"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.7, duration: 0.4 }}
                 >
                   <div className="space-y-1">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm sm:text-lg font-bold ${
                       transaction.type === TransactionType.INCOME 
                         ? "text-green-600" 
                         : transaction.type === TransactionType.TRANSFER

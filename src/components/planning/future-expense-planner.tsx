@@ -65,10 +65,37 @@ interface FutureAffordabilityResult {
   targetDate: string
   daysUntilTarget: number
   projectedExpenses: number
+  balanceBreakdown?: {
+    currentBalance: number
+    projectedIncome: number
+    grossProjectedBalance: number
+    projectedExpenses: number
+    futureCommitments: number
+    futureCommitmentsWeight: number
+    netProjectedBalance: number
+    availableForExpense: number
+  }
+  incomeSourcesFound?: number
+  incomeSourceDetails?: Array<{
+    name: string
+    amount: number
+    frequency: string
+    nextPayDate: string
+    isActive: boolean
+  }>
   expenseBreakdown?: {
     routineExpenses: number
-    plannedExpenses: number
-    plannedExpenseDetails: Array<{
+    upcomingPlannedExpenses: number
+    laterPlannedExpenses: number
+    totalPlannedExpenses: number
+    upcomingPlannedExpenseDetails: Array<{
+      title: string
+      amount: number
+      targetDate: string
+      category: string
+      priority: string
+    }>
+    laterPlannedExpenseDetails: Array<{
       title: string
       amount: number
       targetDate: string
@@ -125,32 +152,43 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
 
   const onSubmit = async (data: FutureExpenseFormData) => {
     setIsLoading(true)
+    setResult(null) // Clear previous results
+    
     try {
       const targetDate = fromDateInputToPhilippineTime(data.targetDate)
+      
+      const requestBody = {
+        amount: parseFloat(data.amount),
+        targetDate: targetDate.toISOString(),
+        category: data.category,
+        description: data.description,
+        walletId: data.walletId,
+      }
       
       const response = await fetch("/api/affordability/future", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          amount: parseFloat(data.amount),
-          targetDate: targetDate.toISOString(),
-          category: data.category,
-          description: data.description,
-          walletId: data.walletId,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
         const resultData = await response.json()
         setResult(resultData)
       } else {
-        const error = await response.json()
-        console.error("Error:", error)
+        const responseText = await response.text()
+        
+        try {
+          const error = JSON.parse(responseText)
+          console.error("API Error:", error)
+          // You could show this error to the user here if needed
+        } catch {
+          console.error("Server Error:", responseText)
+        }
       }
     } catch (error) {
-      console.error("Error checking future affordability:", error)
+      console.error("Network or other error:", error)
     } finally {
       setIsLoading(false)
     }
@@ -431,17 +469,32 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
                     </div>
                     <div className="text-center p-3 bg-purple-50 rounded-lg">
                       <div className="text-lg font-bold text-purple-600">
-                        {formatCurrency(result.expenseBreakdown.plannedExpenses)}
+                        {formatCurrency(result.expenseBreakdown.totalPlannedExpenses)}
                       </div>
                       <div className="text-sm text-gray-600">Planned Expenses</div>
                     </div>
                   </div>
                   
-                  {result.expenseBreakdown.plannedExpenseDetails.length > 0 && (
+                  {(result.expenseBreakdown.upcomingPlannedExpenseDetails.length > 0 || result.expenseBreakdown.laterPlannedExpenseDetails.length > 0) && (
                     <div>
                       <h4 className="font-medium text-sm mb-2">Your Planned Expenses:</h4>
                       <div className="space-y-2">
-                        {result.expenseBreakdown.plannedExpenseDetails.map((expense, index) => (
+                        {/* Upcoming planned expenses */}
+                        {result.expenseBreakdown.upcomingPlannedExpenseDetails.map((expense, index) => (
+                          <div key={`upcoming-${index}`} className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                            <div>
+                              <div className="font-medium text-sm">{expense.title}</div>
+                              <div className="text-xs text-gray-600">
+                                {formatPhilippineDate(expense.targetDate)} • {expense.category} • Upcoming
+                              </div>
+                            </div>
+                            <div className="text-purple-600 font-medium">
+                              {formatCurrency(expense.amount)}
+                            </div>
+                          </div>
+                        ))}
+                        {/* Later planned expenses */}
+                        {result.expenseBreakdown.laterPlannedExpenseDetails.map((expense, index) => (
                           <div key={index} className="flex justify-between items-center p-2 bg-purple-50 rounded">
                             <div>
                               <div className="font-medium text-sm">{expense.title}</div>

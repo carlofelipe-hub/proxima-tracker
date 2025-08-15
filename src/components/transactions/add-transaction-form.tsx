@@ -32,8 +32,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react"
+import { ArrowRight, AlertCircle, CheckCircle2, Target } from "lucide-react"
 import { AffordabilityCheck } from "./affordability-check"
+import { invalidateInsightsCache } from "@/lib/cached-insights"
 
 const transactionSchema = z.object({
   amount: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -49,6 +50,8 @@ const transactionSchema = z.object({
   transferFee: z.string().optional().refine(val => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
     message: "Transfer fee must be a non-negative number"
   }),
+  // Planned expense tracking
+  plannedExpenseId: z.string().optional(),
 }).refine((data) => {
   // If type is TRANSFER, toWalletId is required and must be different from walletId
   if (data.type === TransactionType.TRANSFER) {
@@ -153,6 +156,22 @@ const getTransferFeePresets = (fromType: string, toType: string) => {
   return feeMap[fromType]?.[toType] || 0
 }
 
+interface PlannedExpense {
+  id: string
+  title: string
+  amount: number
+  spentAmount: number
+  remainingAmount: number
+  category: string
+  targetDate: string
+  priority: string
+  wallet?: {
+    id: string
+    name: string
+    type: string
+  }
+}
+
 export function AddTransactionForm({ 
   open, 
   onOpenChange, 
@@ -165,6 +184,24 @@ export function AddTransactionForm({
   const [selectedFromWallet, setSelectedFromWallet] = useState<typeof wallets[0] | null>(null)
   const [selectedToWallet, setSelectedToWallet] = useState<typeof wallets[0] | null>(null)
   const [suggestedFee, setSuggestedFee] = useState<number>(0)
+  const [availablePlannedExpenses, setAvailablePlannedExpenses] = useState<PlannedExpense[]>([])
+  const [selectedPlannedExpense, setSelectedPlannedExpense] = useState<PlannedExpense | null>(null)
+
+  // Fetch available planned expenses when form opens and type is EXPENSE
+  const fetchAvailablePlannedExpenses = async (category?: string) => {
+    try {
+      const params = new URLSearchParams()
+      if (category) params.append("category", category)
+      
+      const response = await fetch(`/api/planned-expenses/available?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAvailablePlannedExpenses(data.plannedExpenses || [])
+      }
+    } catch (error) {
+      console.error("Error fetching planned expenses:", error)
+    }
+  }
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -177,6 +214,7 @@ export function AddTransactionForm({
       date: getPhilippineTimeForInput(), // YYYY-MM-DDTHH:MM format in Philippine time
       toWalletId: "",
       transferFee: "",
+      plannedExpenseId: "",
     },
   })
 
@@ -209,11 +247,12 @@ export function AddTransactionForm({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            ...data,
-            amount: parseFloat(data.amount),
-            date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
-          }),
+                      body: JSON.stringify({
+              ...data,
+              amount: parseFloat(data.amount),
+              date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
+              plannedExpenseId: data.plannedExpenseId || undefined,
+            }),
         })
       }
 
@@ -226,8 +265,11 @@ export function AddTransactionForm({
       setSelectedFromWallet(null)
       setSelectedToWallet(null)
       setSuggestedFee(0)
+      setSelectedPlannedExpense(null)
+      setAvailablePlannedExpenses([])
       onOpenChange(false)
       onSuccess()
+      invalidateInsightsCache() // Trigger insights cache invalidation
     } catch (error) {
       console.error("Error creating transaction:", error)
     } finally {
@@ -242,9 +284,18 @@ export function AddTransactionForm({
   const watchedWalletId = form.watch("walletId")
   const watchedToWalletId = form.watch("toWalletId")
 
+
   // Calculate total deduction for transfers
   const totalDeduction = (parseFloat(watchedAmount || "0") + parseFloat(watchedTransferFee || "0"))
   const hasInsufficientFunds = Boolean(selectedFromWallet && totalDeduction > selectedFromWallet.balance)
+
+  // Check planned expense budget validation
+  const plannedExpenseAmount = parseFloat(watchedAmount || "0")
+  const hasPlannedExpenseOverspend = Boolean(
+    selectedPlannedExpense && 
+    watchedType === TransactionType.EXPENSE &&
+    plannedExpenseAmount > selectedPlannedExpense.remainingAmount
+  )
 
   // Update suggested fee when wallets change
   useEffect(() => {
@@ -269,6 +320,13 @@ export function AddTransactionForm({
     }
   }, [watchedWalletId, watchedToWalletId, wallets])
 
+  // Fetch planned expenses when form opens and type is EXPENSE
+  useEffect(() => {
+    if (open && selectedType === TransactionType.EXPENSE) {
+      fetchAvailablePlannedExpenses()
+    }
+  }, [open, selectedType])
+
   // Update categories when transaction type changes and handle affordability check visibility
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -277,7 +335,16 @@ export function AddTransactionForm({
         form.setValue("category", "") // Reset category when type changes
         form.setValue("toWalletId", "") // Reset transfer fields when type changes
         form.setValue("transferFee", "")
+        form.setValue("plannedExpenseId", "") // Reset planned expense when type changes
+        setSelectedPlannedExpense(null)
         setShowAffordabilityCheck(value.type === TransactionType.EXPENSE)
+        
+        // Fetch planned expenses for expense transactions
+        if (value.type === TransactionType.EXPENSE) {
+          fetchAvailablePlannedExpenses()
+        } else {
+          setAvailablePlannedExpenses([])
+        }
       }
       
       // Show affordability check for expenses when amount or wallet changes
@@ -285,9 +352,15 @@ export function AddTransactionForm({
         const amount = parseFloat(value.amount || "0")
         setShowAffordabilityCheck(amount > 0)
       }
+      
+      // Update planned expense selection when plannedExpenseId changes
+      if (name === "plannedExpenseId" && value.plannedExpenseId) {
+        const plannedExpense = availablePlannedExpenses.find(pe => pe.id === value.plannedExpenseId)
+        setSelectedPlannedExpense(plannedExpense || null)
+      }
     })
     return () => subscription.unsubscribe()
-  }, [form])
+  }, [form, availablePlannedExpenses])
 
   const handleWalletSuggestion = (suggestedWalletId: string) => {
     form.setValue("walletId", suggestedWalletId)
@@ -529,6 +602,97 @@ export function AddTransactionForm({
               )}
             />
             
+            {/* Planned Expense Selection for Expenses */}
+            {selectedType === TransactionType.EXPENSE && availablePlannedExpenses.length > 0 && (
+              <FormField
+                control={form.control}
+                name="plannedExpenseId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Link to Planned Expense (Optional)
+                      </div>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a planned expense to deduct from" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">
+                          <span className="text-muted-foreground">No planned expense</span>
+                        </SelectItem>
+                        {availablePlannedExpenses.map((expense) => (
+                          <SelectItem key={expense.id} value={expense.id}>
+                            <div className="flex justify-between items-center w-full">
+                              <div className="flex flex-col items-start">
+                                <span className="font-medium">{expense.title}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {expense.category} • {new Date(expense.targetDate).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="ml-4 flex flex-col items-end">
+                                <Badge variant="outline" className="mb-1">
+                                  ₱{expense.remainingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} left
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  of ₱{expense.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Planned Expense Info */}
+            {selectedPlannedExpense && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Target className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-blue-900">{selectedPlannedExpense.title}</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Remaining budget: ₱{selectedPlannedExpense.remainingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </p>
+                    <div className="mt-2 bg-blue-100 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${Math.min(100, (selectedPlannedExpense.spentAmount / selectedPlannedExpense.amount) * 100)}%` 
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      ₱{selectedPlannedExpense.spentAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} of ₱{selectedPlannedExpense.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} spent
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Planned Expense Budget Warning */}
+            {hasPlannedExpenseOverspend && selectedPlannedExpense && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">
+                <AlertCircle className="h-4 w-4" />
+                <div className="text-sm">
+                  <div className="font-medium">Amount exceeds remaining budget</div>
+                  <div>
+                    You&apos;re trying to spend ₱{plannedExpenseAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} 
+                    but only ₱{selectedPlannedExpense.remainingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 })} is available.
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Affordability Check for Expenses */}
             {showAffordabilityCheck && selectedType === TransactionType.EXPENSE && (
               <div className="pt-2">
@@ -536,6 +700,7 @@ export function AddTransactionForm({
                   amount={parseFloat(form.watch("amount") || "0")}
                   walletId={form.watch("walletId")}
                   category={form.watch("category")}
+                  description={form.watch("description")}
                   onWalletSuggestion={handleWalletSuggestion}
                 />
               </div>
@@ -587,7 +752,11 @@ export function AddTransactionForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isLoading || (selectedType === TransactionType.TRANSFER && hasInsufficientFunds)}
+                disabled={
+                  isLoading || 
+                  (selectedType === TransactionType.TRANSFER && hasInsufficientFunds) ||
+                  hasPlannedExpenseOverspend
+                }
               >
                 {isLoading ? "Adding..." : 
                  selectedType === TransactionType.TRANSFER ? "Transfer Money" : "Add Transaction"}
