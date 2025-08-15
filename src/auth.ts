@@ -1,4 +1,5 @@
 import NextAuth from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import GoogleProvider from "next-auth/providers/google"
@@ -90,6 +91,11 @@ export const authOptions: NextAuthOptions = {
   },
 }
 
-export default NextAuth(authOptions)
+const handler = NextAuth(authOptions)
 
-export const auth = NextAuth(authOptions).auth
+export default handler
+
+// For API route usage
+export function auth() {
+  return getServerSession(authOptions)
+}
