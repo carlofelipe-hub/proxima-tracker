@@ -110,7 +110,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
       description: "",
       targetDate: "",
       priority: "MEDIUM",
-      walletId: "",
+      walletId: "none",
     },
   })
 
@@ -127,7 +127,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
         description: expense.description || "",
         targetDate: dateString,
         priority: expense.priority,
-        walletId: expense.wallet?.id || "",
+        walletId: expense.wallet?.id || "none",
       })
     }
   }, [open, expense, form])
@@ -150,7 +150,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
           description: data.description,
           targetDate: targetDate.toISOString(),
           priority: data.priority,
-          walletId: data.walletId || null,
+          walletId: data.walletId === "none" ? null : data.walletId,
         }),
       })
 
@@ -311,7 +311,7 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No specific wallet</SelectItem>
+                      <SelectItem value="none">No specific wallet</SelectItem>
                       {wallets.map((wallet) => (
                         <SelectItem key={wallet.id} value={wallet.id}>
                           {wallet.name} ({wallet.type})
