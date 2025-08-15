@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
-import { MobileNav } from "@/components/navigation/mobile-nav"
+import { SidebarNav } from "@/components/navigation/sidebar-nav"
 import { AIInsights } from "@/components/insights/ai-insights"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -99,10 +99,11 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <MobileNav />
+    <>
+      <SidebarNav />
       
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <div className="min-h-screen bg-background lg:ml-80">
+        <main className="container mx-auto px-4 py-6 lg:py-6 pt-20 lg:pt-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -275,7 +276,8 @@ export default function InsightsPage() {
             )}
           </>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   )
 }
