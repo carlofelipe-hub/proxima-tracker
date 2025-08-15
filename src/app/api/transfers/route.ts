@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { TransactionType } from "@prisma/client"
 import { Decimal } from "@prisma/client/runtime/library"
+import { getNowInPhilippineTime } from "@/lib/timezone"
 
 const createTransferSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Create transfer transaction with atomic database operations
     const result = await prisma.$transaction(async (tx) => {
       const transferId = `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const transferDate = validatedData.date ? new Date(validatedData.date) : new Date()
+      const transferDate = validatedData.date ? new Date(validatedData.date) : getNowInPhilippineTime()
 
       // Create outgoing transaction (debit from source wallet)
       const outgoingTransaction = await tx.transaction.create({

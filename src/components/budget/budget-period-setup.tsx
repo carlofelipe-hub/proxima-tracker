@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/currency"
+import { getPhilippineDateForInput, addDaysInPhilippineTime, getDaysBetweenInPhilippineTime, fromDateInputToPhilippineTime } from "@/lib/timezone"
 
 const budgetPeriodSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
@@ -49,7 +50,7 @@ export function BudgetPeriodSetup({
   const form = useForm<BudgetPeriodFormData>({
     resolver: zodResolver(budgetPeriodSchema),
     defaultValues: {
-      startDate: new Date().toISOString().slice(0, 10), // YYYY-MM-DD format
+      startDate: getPhilippineDateForInput(), // YYYY-MM-DD format in Philippine time
       endDate: "", // User needs to set this
       totalIncome: "",
     },
@@ -86,8 +87,8 @@ export function BudgetPeriodSetup({
 
   // Helper to set quick date ranges
   const setQuickDate = (days: number) => {
-    const endDate = new Date()
-    endDate.setDate(endDate.getDate() + days)
+    const startDate = fromDateInputToPhilippineTime(form.watch("startDate") || getPhilippineDateForInput())
+    const endDate = addDaysInPhilippineTime(startDate, days)
     form.setValue("endDate", endDate.toISOString().slice(0, 10))
   }
 
@@ -95,16 +96,16 @@ export function BudgetPeriodSetup({
   const watchedEndDate = form.watch("endDate")
   const watchedIncome = form.watch("totalIncome")
 
-  // Calculate daily budget
+    // Calculate daily budget
   const calculateDailyBudget = () => {
     if (watchedStartDate && watchedEndDate && watchedIncome) {
-      const start = new Date(watchedStartDate)
-      const end = new Date(watchedEndDate)
       const income = parseFloat(watchedIncome)
       
-      if (!isNaN(income) && income > 0 && end > start) {
-        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-        return income / days
+      if (!isNaN(income) && income > 0) {
+        const days = getDaysBetweenInPhilippineTime(watchedStartDate, watchedEndDate)
+        if (days > 0) {
+          return income / days
+        }
       }
     }
     return 0

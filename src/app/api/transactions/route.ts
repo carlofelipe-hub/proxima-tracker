@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { TransactionType } from "@prisma/client"
 import { Decimal } from "@prisma/client/runtime/library"
+import { getNowInPhilippineTime } from "@/lib/timezone"
 
 const createTransactionSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
         data: {
           ...validatedData,
           userId,
-          date: validatedData.date ? new Date(validatedData.date) : new Date(),
+          date: validatedData.date ? new Date(validatedData.date) : getNowInPhilippineTime(),
         },
         include: {
           wallet: {

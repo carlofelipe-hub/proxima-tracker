@@ -33,6 +33,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/currency"
+import { getPhilippineDateForInput, formatPhilippineDate, fromDateInputToPhilippineTime } from "@/lib/timezone"
 
 const futureExpenseSchema = z.object({
   amount: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -125,7 +126,7 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
   const onSubmit = async (data: FutureExpenseFormData) => {
     setIsLoading(true)
     try {
-      const targetDate = new Date(data.targetDate)
+      const targetDate = fromDateInputToPhilippineTime(data.targetDate)
       
       const response = await fetch("/api/affordability/future", {
         method: "POST",
@@ -259,7 +260,7 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
                       <FormControl>
                         <Input 
                           type="date"
-                          min={new Date().toISOString().split('T')[0]}
+                          min={getPhilippineDateForInput()}
                           {...field} 
                         />
                       </FormControl>
@@ -362,7 +363,7 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
                   {getConfidenceBadge(result.confidenceLevel)}
                 </div>
                 <AlertDescription>
-                  By {new Date(result.targetDate).toLocaleDateString()}, you&apos;ll have an estimated{" "}
+                  By {formatPhilippineDate(result.targetDate)}, you&apos;ll have an estimated{" "}
                   <strong>{formatCurrency(result.projectedBalance)}</strong> available for this{" "}
                   <strong>{formatCurrency(result.targetAmount)}</strong> expense.
                 </AlertDescription>
@@ -445,7 +446,7 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
                             <div>
                               <div className="font-medium text-sm">{expense.title}</div>
                               <div className="text-xs text-gray-600">
-                                {new Date(expense.targetDate).toLocaleDateString()} • {expense.category}
+                                {formatPhilippineDate(expense.targetDate)} • {expense.category}
                               </div>
                             </div>
                             <div className="text-purple-600 font-medium">
@@ -477,7 +478,7 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
                       <div>
                         <div className="font-medium">{income.source}</div>
                         <div className="text-sm text-gray-600">
-                          {new Date(income.date).toLocaleDateString()}
+                          {formatPhilippineDate(income.date)}
                         </div>
                       </div>
                       <div className="text-green-600 font-medium">

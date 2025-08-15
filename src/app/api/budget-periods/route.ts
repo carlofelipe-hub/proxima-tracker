@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { fromDateInputToPhilippineTime } from "@/lib/timezone"
 
 const createBudgetPeriodSchema = z.object({
-  startDate: z.string().transform(str => new Date(str)),
-  endDate: z.string().transform(str => new Date(str)),
+  startDate: z.string().transform(str => fromDateInputToPhilippineTime(str)),
+  endDate: z.string().transform(str => fromDateInputToPhilippineTime(str)),
   totalIncome: z.number().min(0, "Total income must be positive"),
 })
 

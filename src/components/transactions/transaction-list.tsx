@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/currency"
 import { TransactionType } from "@prisma/client"
 import { motion } from "framer-motion"
 import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Calendar, Wallet } from "lucide-react"
-import { format } from "date-fns"
+import { formatPhilippineDateTime } from "@/lib/timezone"
 
 interface Transaction {
   id: string
@@ -163,7 +163,7 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   >
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {format(new Date(transaction.date), "MMM dd, yyyy 'at' h:mm a")}
+                      {formatPhilippineDateTime(transaction.date)}
                     </div>
                     <div className="flex items-center gap-1">
                       <Wallet className="h-3 w-3" />

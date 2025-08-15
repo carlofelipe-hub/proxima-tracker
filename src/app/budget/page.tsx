@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/currency"
+import { formatPhilippineDate, getNowInPhilippineTime, getDaysBetweenInPhilippineTime, toPhilippineTime } from "@/lib/timezone"
 import { Calendar, Clock, DollarSign, Plus, TrendingDown, TrendingUp } from "lucide-react"
 
 interface BudgetPeriod {
@@ -87,12 +88,12 @@ export default function BudgetPage() {
   const getCurrentBudgetInfo = () => {
     if (!activeBudgetPeriod) return null
 
-    const now = new Date()
-    const endDate = new Date(activeBudgetPeriod.endDate)
-    const startDate = new Date(activeBudgetPeriod.startDate)
+    const now = getNowInPhilippineTime()
+    const endDate = toPhilippineTime(activeBudgetPeriod.endDate)
+    const startDate = toPhilippineTime(activeBudgetPeriod.startDate)
     
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-    const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const totalDays = getDaysBetweenInPhilippineTime(startDate, endDate)
+    const daysRemaining = getDaysBetweenInPhilippineTime(now, endDate)
     const daysElapsed = totalDays - daysRemaining
     
     const dailyBudget = activeBudgetPeriod.totalIncome / totalDays
@@ -150,7 +151,7 @@ export default function BudgetPage() {
                         Current Budget Period
                       </CardTitle>
                       <CardDescription>
-                        {new Date(currentBudget.startDate).toLocaleDateString()} - {new Date(currentBudget.endDate).toLocaleDateString()}
+                        {formatPhilippineDate(currentBudget.startDate)} - {formatPhilippineDate(currentBudget.endDate)}
                       </CardDescription>
                     </div>
                     <Badge variant={currentBudget.onTrack ? "default" : "destructive"}>
@@ -270,7 +271,7 @@ export default function BudgetPage() {
                         <div>
                           <div className="font-medium">{income.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {income.frequency} • Next pay: {new Date(income.nextPayDate).toLocaleDateString()}
+                            {income.frequency} • Next pay: {formatPhilippineDate(income.nextPayDate)}
                           </div>
                           {income.wallet && (
                             <div className="text-xs text-muted-foreground">
@@ -314,7 +315,7 @@ export default function BudgetPage() {
                       <div key={period.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <div className="font-medium">
-                            {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
+                            {formatPhilippineDate(period.startDate)} - {formatPhilippineDate(period.endDate)}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Total Income: {formatCurrency(period.totalIncome)}

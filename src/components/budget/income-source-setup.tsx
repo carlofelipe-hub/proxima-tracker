@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { addDaysInPhilippineTime, getNowInPhilippineTime } from "@/lib/timezone"
 import { formatCurrency } from "@/lib/currency"
 
 const incomeSourceSchema = z.object({
@@ -115,8 +116,8 @@ export function IncomeSourceSetup({
 
   // Helper to set quick next pay dates
   const setQuickPayDate = (days: number) => {
-    const nextPay = new Date()
-    nextPay.setDate(nextPay.getDate() + days)
+    const now = getNowInPhilippineTime()
+    const nextPay = addDaysInPhilippineTime(now, days)
     form.setValue("nextPayDate", nextPay.toISOString().slice(0, 10))
   }
 

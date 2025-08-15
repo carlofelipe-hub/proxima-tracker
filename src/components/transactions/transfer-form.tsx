@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
+import { getPhilippineTimeForInput, fromDateTimeLocalToPhilippineTime } from "@/lib/timezone"
 
 const transferSchema = z.object({
   amount: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -130,7 +131,7 @@ export function TransferForm({
       toWalletId: "",
       transferFee: "",
       description: "",
-      date: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM format
+      date: getPhilippineTimeForInput(), // YYYY-MM-DDTHH:MM format in Philippine time
     },
   })
 
@@ -180,7 +181,7 @@ export function TransferForm({
           ...data,
           amount: parseFloat(data.amount),
           transferFee: data.transferFee ? parseFloat(data.transferFee) : 0,
-          date: data.date ? new Date(data.date).toISOString() : undefined,
+          date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
         }),
       })
 

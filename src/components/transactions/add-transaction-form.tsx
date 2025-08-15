@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { TransactionType } from "@prisma/client"
+import { getPhilippineTimeForInput, fromDateTimeLocalToPhilippineTime } from "@/lib/timezone"
 import {
   Dialog,
   DialogContent,
@@ -102,7 +103,7 @@ export function AddTransactionForm({
       category: "",
       description: "",
       walletId: "",
-      date: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM format
+      date: getPhilippineTimeForInput(), // YYYY-MM-DDTHH:MM format in Philippine time
     },
   })
 
@@ -118,7 +119,7 @@ export function AddTransactionForm({
         body: JSON.stringify({
           ...data,
           amount: parseFloat(data.amount),
-          date: data.date ? new Date(data.date).toISOString() : undefined,
+          date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
         }),
       })
 

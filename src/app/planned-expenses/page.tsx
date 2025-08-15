@@ -17,6 +17,7 @@ import {
   Pause
 } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
+import { formatPhilippineDate, getNowInPhilippineTime, getDaysBetweenInPhilippineTime, toPhilippineTime } from "@/lib/timezone"
 
 interface PlannedExpense {
   id: string
@@ -197,11 +198,9 @@ export default function PlannedExpensesPage() {
   }
 
   const getDaysUntilTarget = (targetDate: string) => {
-    const now = new Date()
-    const target = new Date(targetDate)
-    const diffTime = target.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+    const now = getNowInPhilippineTime()
+    const target = toPhilippineTime(targetDate)
+    return getDaysBetweenInPhilippineTime(now, target)
   }
 
   const groupedExpenses = plannedExpenses.reduce((groups, expense) => {
@@ -276,8 +275,8 @@ export default function PlannedExpensesPage() {
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
                 {plannedExpenses.filter(expense => {
-                  const targetDate = new Date(expense.targetDate)
-                  const now = new Date()
+                                  const targetDate = toPhilippineTime(expense.targetDate)
+                const now = getNowInPhilippineTime()
                   return targetDate.getMonth() === now.getMonth() && 
                          targetDate.getFullYear() === now.getFullYear()
                 }).length}
@@ -355,7 +354,7 @@ export default function PlannedExpensesPage() {
                             <div className="text-sm">
                               <div className="flex items-center gap-1 text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
-                                <span>{new Date(expense.targetDate).toLocaleDateString()}</span>
+                                <span>{formatPhilippineDate(expense.targetDate)}</span>
                                 <span className={`ml-2 ${isOverdue ? 'text-red-600' : isUpcoming ? 'text-yellow-600' : ''}`}>
                                   ({isOverdue ? `${Math.abs(daysUntilTarget)} days overdue` : 
                                      daysUntilTarget === 0 ? 'Today' : 
