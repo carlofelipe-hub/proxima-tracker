@@ -418,7 +418,10 @@ export default function DashboardPage() {
           open={isAddTransactionOpen}
           onOpenChange={setIsAddTransactionOpen}
           onSuccess={handleTransactionSuccess}
-          wallets={wallets}
+          wallets={wallets.map(wallet => ({
+            ...wallet,
+            balance: parseFloat(wallet.balance)
+          }))}
         />
         </div>
       </PageTransition>

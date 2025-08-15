@@ -31,6 +31,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react"
 import { AffordabilityCheck } from "./affordability-check"
 
 const transactionSchema = z.object({
@@ -42,6 +44,23 @@ const transactionSchema = z.object({
   description: z.string().optional(),
   walletId: z.string().min(1, "Wallet is required"),
   date: z.string().optional(),
+  // Transfer-specific fields
+  toWalletId: z.string().optional(),
+  transferFee: z.string().optional().refine(val => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+    message: "Transfer fee must be a non-negative number"
+  }),
+}).refine((data) => {
+  // If type is TRANSFER, toWalletId is required and must be different from walletId
+  if (data.type === TransactionType.TRANSFER) {
+    if (!data.toWalletId) {
+      return false
+    }
+    return data.walletId !== data.toWalletId
+  }
+  return true
+}, {
+  message: "For transfers, destination wallet is required and must be different from source wallet",
+  path: ["toWalletId"],
 })
 
 type TransactionFormData = z.infer<typeof transactionSchema>
@@ -54,6 +73,7 @@ interface AddTransactionFormProps {
     id: string
     name: string
     type: string
+    balance: number
   }>
 }
 
@@ -85,6 +105,54 @@ const transactionCategories = {
   ],
 }
 
+// Common transfer fees based on wallet types
+const getTransferFeePresets = (fromType: string, toType: string) => {
+  const feeMap: Record<string, Record<string, number>> = {
+    'GCASH': {
+      'BPI_BANK': 15,
+      'UNION_BANK': 15,
+      'CASH': 0,
+      'SAVINGS': 25,
+      'CREDIT_CARD': 30,
+      'OTHER': 15,
+    },
+    'BPI_BANK': {
+      'GCASH': 10,
+      'UNION_BANK': 25,
+      'CASH': 0,
+      'SAVINGS': 0,
+      'CREDIT_CARD': 30,
+      'OTHER': 15,
+    },
+    'UNION_BANK': {
+      'GCASH': 10,
+      'BPI_BANK': 25,
+      'CASH': 0,
+      'SAVINGS': 0,
+      'CREDIT_CARD': 30,
+      'OTHER': 15,
+    },
+    'CASH': {
+      'GCASH': 0,
+      'BPI_BANK': 0,
+      'UNION_BANK': 0,
+      'SAVINGS': 0,
+      'CREDIT_CARD': 0,
+      'OTHER': 0,
+    },
+    'SAVINGS': {
+      'GCASH': 15,
+      'BPI_BANK': 0,
+      'UNION_BANK': 0,
+      'CASH': 0,
+      'CREDIT_CARD': 25,
+      'OTHER': 10,
+    },
+  }
+
+  return feeMap[fromType]?.[toType] || 0
+}
+
 export function AddTransactionForm({ 
   open, 
   onOpenChange, 
@@ -94,6 +162,9 @@ export function AddTransactionForm({
   const [isLoading, setIsLoading] = useState(false)
   const [selectedType, setSelectedType] = useState<TransactionType>(TransactionType.EXPENSE)
   const [showAffordabilityCheck, setShowAffordabilityCheck] = useState(false)
+  const [selectedFromWallet, setSelectedFromWallet] = useState<typeof wallets[0] | null>(null)
+  const [selectedToWallet, setSelectedToWallet] = useState<typeof wallets[0] | null>(null)
+  const [suggestedFee, setSuggestedFee] = useState<number>(0)
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -104,6 +175,8 @@ export function AddTransactionForm({
       description: "",
       walletId: "",
       date: getPhilippineTimeForInput(), // YYYY-MM-DDTHH:MM format in Philippine time
+      toWalletId: "",
+      transferFee: "",
     },
   })
 
@@ -111,23 +184,48 @@ export function AddTransactionForm({
     setIsLoading(true)
     
     try {
-      const response = await fetch("/api/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          amount: parseFloat(data.amount),
-          date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
-        }),
-      })
+      let response
+      
+      if (data.type === TransactionType.TRANSFER) {
+        // Use transfers API for transfer transactions
+        response = await fetch("/api/transfers", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: parseFloat(data.amount),
+            fromWalletId: data.walletId,
+            toWalletId: data.toWalletId,
+            transferFee: data.transferFee ? parseFloat(data.transferFee) : 0,
+            description: data.description,
+            date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
+          }),
+        })
+      } else {
+        // Use regular transactions API for income/expense
+        response = await fetch("/api/transactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...data,
+            amount: parseFloat(data.amount),
+            date: data.date ? fromDateTimeLocalToPhilippineTime(data.date).toISOString() : undefined,
+          }),
+        })
+      }
 
       if (!response.ok) {
-        throw new Error("Failed to create transaction")
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create transaction")
       }
 
       form.reset()
+      setSelectedFromWallet(null)
+      setSelectedToWallet(null)
+      setSuggestedFee(0)
       onOpenChange(false)
       onSuccess()
     } catch (error) {
@@ -137,12 +235,48 @@ export function AddTransactionForm({
     }
   }
 
+  // Watch form values for transfer logic
+  const watchedAmount = form.watch("amount")
+  const watchedTransferFee = form.watch("transferFee")
+  const watchedType = form.watch("type")
+  const watchedWalletId = form.watch("walletId")
+  const watchedToWalletId = form.watch("toWalletId")
+
+  // Calculate total deduction for transfers
+  const totalDeduction = (parseFloat(watchedAmount || "0") + parseFloat(watchedTransferFee || "0"))
+  const hasInsufficientFunds = Boolean(selectedFromWallet && totalDeduction > selectedFromWallet.balance)
+
+  // Update suggested fee when wallets change
+  useEffect(() => {
+    if (selectedFromWallet && selectedToWallet && watchedType === TransactionType.TRANSFER) {
+      const suggested = getTransferFeePresets(selectedFromWallet.type, selectedToWallet.type)
+      setSuggestedFee(suggested)
+      if (suggested > 0 && !form.watch("transferFee")) {
+        form.setValue("transferFee", suggested.toString())
+      }
+    }
+  }, [selectedFromWallet, selectedToWallet, watchedType, form])
+
+  // Update wallet objects when form values change
+  useEffect(() => {
+    if (watchedWalletId) {
+      const wallet = wallets.find(w => w.id === watchedWalletId)
+      setSelectedFromWallet(wallet || null)
+    }
+    if (watchedToWalletId) {
+      const wallet = wallets.find(w => w.id === watchedToWalletId)
+      setSelectedToWallet(wallet || null)
+    }
+  }, [watchedWalletId, watchedToWalletId, wallets])
+
   // Update categories when transaction type changes and handle affordability check visibility
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === "type" && value.type) {
         setSelectedType(value.type as TransactionType)
         form.setValue("category", "") // Reset category when type changes
+        form.setValue("toWalletId", "") // Reset transfer fields when type changes
+        form.setValue("transferFee", "")
         setShowAffordabilityCheck(value.type === TransactionType.EXPENSE)
       }
       
@@ -157,6 +291,10 @@ export function AddTransactionForm({
 
   const handleWalletSuggestion = (suggestedWalletId: string) => {
     form.setValue("walletId", suggestedWalletId)
+  }
+
+  const applySuggestedFee = () => {
+    form.setValue("transferFee", suggestedFee.toString())
   }
 
   return (
@@ -221,17 +359,28 @@ export function AddTransactionForm({
               name="walletId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Wallet</FormLabel>
+                  <FormLabel>
+                    {selectedType === TransactionType.TRANSFER ? "From Wallet" : "Wallet"}
+                  </FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select wallet" />
+                        <SelectValue placeholder={
+                          selectedType === TransactionType.TRANSFER ? "Select source wallet" : "Select wallet"
+                        } />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {wallets.map((wallet) => (
                         <SelectItem key={wallet.id} value={wallet.id}>
-                          {wallet.name}
+                          <div className="flex justify-between items-center w-full">
+                            <span>{wallet.name}</span>
+                            {selectedType === TransactionType.TRANSFER && (
+                              <Badge variant="outline" className="ml-2">
+                                ₱{wallet.balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              </Badge>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -240,6 +389,120 @@ export function AddTransactionForm({
                 </FormItem>
               )}
             />
+
+            {/* Transfer-specific fields */}
+            {selectedType === TransactionType.TRANSFER && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="toWalletId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>To Wallet</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select destination wallet" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {wallets
+                            .filter(wallet => wallet.id !== form.watch("walletId"))
+                            .map((wallet) => (
+                              <SelectItem key={wallet.id} value={wallet.id}>
+                                <div className="flex justify-between items-center w-full">
+                                  <span>{wallet.name}</span>
+                                  <Badge variant="outline" className="ml-2">
+                                    ₱{wallet.balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Transfer Preview */}
+                {selectedFromWallet && selectedToWallet && (
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <div className="flex items-center justify-between">
+                      <div className="text-center">
+                        <div className="font-medium">{selectedFromWallet.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Balance: ₱{selectedFromWallet.balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      <ArrowRight className="h-6 w-6 text-muted-foreground" />
+                      <div className="text-center">
+                        <div className="font-medium">{selectedToWallet.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Balance: ₱{selectedToWallet.balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="transferFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Transfer Fee (PHP)
+                        {suggestedFee > 0 && (
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            className="ml-2 h-auto p-0 text-xs"
+                            onClick={applySuggestedFee}
+                          >
+                            Suggested: ₱{suggestedFee.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                          </Button>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          min="0"
+                          placeholder="0.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Balance Check for Transfers */}
+                {selectedFromWallet && totalDeduction > 0 && (
+                  <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                    hasInsufficientFunds 
+                      ? 'bg-red-50 text-red-700 border border-red-200' 
+                      : 'bg-green-50 text-green-700 border border-green-200'
+                  }`}>
+                    {hasInsufficientFunds ? (
+                      <AlertCircle className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    <div className="text-sm">
+                      <div>
+                        Total deduction: ₱{totalDeduction.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div>
+                        Remaining balance: ₱{(selectedFromWallet.balance - totalDeduction).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
             
             <FormField
               control={form.control}
@@ -322,8 +585,12 @@ export function AddTransactionForm({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Transaction"}
+              <Button 
+                type="submit" 
+                disabled={isLoading || (selectedType === TransactionType.TRANSFER && hasInsufficientFunds)}
+              >
+                {isLoading ? "Adding..." : 
+                 selectedType === TransactionType.TRANSFER ? "Transfer Money" : "Add Transaction"}
               </Button>
             </div>
           </form>

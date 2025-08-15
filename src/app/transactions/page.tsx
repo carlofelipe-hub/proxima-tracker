@@ -6,10 +6,10 @@ import { redirect } from "next/navigation"
 import { SidebarNav } from "@/components/navigation/sidebar-nav"
 import { TransactionList } from "@/components/transactions/transaction-list"
 import { AddTransactionForm } from "@/components/transactions/add-transaction-form"
-import { TransferForm } from "@/components/transactions/transfer-form"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Receipt, TrendingUp, TrendingDown, Calendar, ArrowRightLeft } from "lucide-react"
+import { Plus, Receipt, TrendingUp, TrendingDown, Calendar } from "lucide-react"
 
 interface Transaction {
   id: string
@@ -55,7 +55,6 @@ export default function TransactionsPage() {
     transactionCount: 0
   })
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false)
-  const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const calculateStats = useCallback((transactions: Transaction[]) => {
@@ -122,10 +121,7 @@ export default function TransactionsPage() {
     fetchWallets() // Refresh wallets to get updated balances
   }
 
-  const handleTransferCompleted = () => {
-    fetchTransactions()
-    fetchWallets() // Refresh wallets to get updated balances
-  }
+
 
   const formatCurrency = (amount: number) => {
     return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
@@ -198,19 +194,11 @@ export default function TransactionsPage() {
           </Card>
         </div>
 
-        {/* Action Buttons - Desktop */}
-        <div className="hidden md:flex gap-3">
+        {/* Add Transaction Button - Desktop */}
+        <div className="hidden md:block">
           <Button onClick={() => setIsAddTransactionOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Transaction
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsTransferOpen(true)}
-            disabled={wallets.length < 2}
-          >
-            <ArrowRightLeft className="mr-2 h-4 w-4" />
-            Transfer Money
           </Button>
         </div>
 
@@ -238,18 +226,10 @@ export default function TransactionsPage() {
                     Add your first transaction to start tracking
                   </p>
                 </div>
-                <div className="flex gap-2 justify-center">
-                  <Button onClick={() => setIsAddTransactionOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Your First Transaction
-                  </Button>
-                  {wallets.length >= 2 && (
-                    <Button variant="outline" onClick={() => setIsTransferOpen(true)}>
-                      <ArrowRightLeft className="mr-2 h-4 w-4" />
-                      Transfer Money
-                    </Button>
-                  )}
-                </div>
+                <Button onClick={() => setIsAddTransactionOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Transaction
+                </Button>
               </div>
             ) : (
               <TransactionList 
@@ -264,14 +244,6 @@ export default function TransactionsPage() {
           open={isAddTransactionOpen}
           onOpenChange={setIsAddTransactionOpen}
           onSuccess={handleTransactionAdded}
-          wallets={wallets}
-        />
-
-        {/* Transfer Form */}
-        <TransferForm 
-          open={isTransferOpen}
-          onOpenChange={setIsTransferOpen}
-          onSuccess={handleTransferCompleted}
           wallets={wallets}
         />
         </main>
