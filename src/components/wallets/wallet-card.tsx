@@ -92,17 +92,13 @@ export function WalletCard({ wallet, onEdit, onDelete }: WalletCardProps) {
             </div>
           </CardTitle>
           
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
+          <div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                  className="h-8 w-8 p-0"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
@@ -125,7 +121,7 @@ export function WalletCard({ wallet, onEdit, onDelete }: WalletCardProps) {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </motion.div>
+          </div>
         </CardHeader>
         
         <CardContent>

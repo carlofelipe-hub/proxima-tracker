@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { formatPhilippineDate, getNowInPhilippineTime, getDaysBetweenInPhilippineTime, toPhilippineTime } from "@/lib/timezone"
+import { EditPlannedExpenseDialog } from "@/components/planned-expenses/edit-planned-expense-dialog"
 
 interface PlannedExpense {
   id: string
@@ -37,9 +38,16 @@ interface PlannedExpense {
   updatedAt: string
 }
 
+interface Wallet {
+  id: string
+  name: string
+  type: string
+}
+
 export default function PlannedExpensesPage() {
   const { data: session, status } = useSession()
   const [plannedExpenses, setPlannedExpenses] = useState<PlannedExpense[]>([])
+  const [wallets, setWallets] = useState<Wallet[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchPlannedExpenses = async () => {
@@ -56,9 +64,22 @@ export default function PlannedExpensesPage() {
     }
   }
 
+  const fetchWallets = async () => {
+    try {
+      const response = await fetch("/api/wallets")
+      if (response.ok) {
+        const data = await response.json()
+        setWallets(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch wallets:", error)
+    }
+  }
+
   useEffect(() => {
     if (session) {
       fetchPlannedExpenses()
+      fetchWallets()
     }
   }, [session])
 
@@ -368,6 +389,11 @@ export default function PlannedExpensesPage() {
                             
                             <div className="flex flex-wrap gap-1">
                               {getStatusActions(expense)}
+                              <EditPlannedExpenseDialog
+                                expense={expense}
+                                wallets={wallets}
+                                onExpenseUpdated={fetchPlannedExpenses}
+                              />
                               <Button
                                 size="sm"
                                 variant="ghost"
