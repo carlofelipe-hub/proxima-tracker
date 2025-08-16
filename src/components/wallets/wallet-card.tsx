@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -47,19 +46,62 @@ const walletIcons = {
   OTHER: Wallet,
 }
 
-const walletColors = {
-  GCASH: "text-blue-600 bg-blue-50",
-  BPI_BANK: "text-red-600 bg-red-50",
-  UNION_BANK: "text-green-600 bg-green-50",
-  CASH: "text-green-600 bg-green-50",
-  SAVINGS: "text-purple-600 bg-purple-50",
-  CREDIT_CARD: "text-orange-600 bg-orange-50",
-  OTHER: "text-gray-600 bg-gray-50",
+// Updated to use style guide colors
+const walletStyles = {
+  GCASH: {
+    gradient: "from-[#dbabbb] to-[#baa1a7]",
+    bg: "bg-gradient-to-br from-[#dbabbb] to-[#baa1a7]",
+    text: "text-white",
+    brand: "GCash",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjEpIi8+Cjwvc3ZnPgo=')]"
+  },
+  BPI_BANK: {
+    gradient: "from-[#edbbb4] to-[#dbabbb]",
+    bg: "bg-gradient-to-br from-[#edbbb4] to-[#dbabbb]",
+    text: "text-white",
+    brand: "BPI",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMTgiIHk9IjE4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMSkiLz4KPC9zdmc+Cg==')]"
+  },
+  UNION_BANK: {
+    gradient: "from-[#edd2e0] to-[#edbbb4]",
+    bg: "bg-gradient-to-br from-[#edd2e0] to-[#edbbb4]",
+    text: "text-white",
+    brand: "UnionBank",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBvbHlnb24gcG9pbnRzPSIyMCwxNSAyMiwxOSAxOCwxOSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjIpIi8+Cjwvc3ZnPgo=')]"
+  },
+  CASH: {
+    gradient: "from-[#baa1a7] to-[#797b84]",
+    bg: "bg-gradient-to-br from-[#baa1a7] to-[#797b84]",
+    text: "text-white",
+    brand: "Cash",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjIpIi8+Cjwvc3ZnPgo=')]"
+  },
+  SAVINGS: {
+    gradient: "from-[#dbabbb] to-[#baa1a7]",
+    bg: "bg-gradient-to-br from-[#dbabbb] to-[#baa1a7]",
+    text: "text-white",
+    brand: "Savings",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBvbHlnb24gcG9pbnRzPSIyMCwxNiAyMiwxOSAxOCwxOSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjE1KSIvPgo8L3N2Zz4K')]"
+  },
+  CREDIT_CARD: {
+    gradient: "from-[#edbbb4] to-[#dbabbb]",
+    bg: "bg-gradient-to-br from-[#edbbb4] to-[#dbabbb]",
+    text: "text-white",
+    brand: "Credit Card",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMTgiIHk9IjE4IiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMSkiLz4KPC9zdmc+Cg==')]"
+  },
+  OTHER: {
+    gradient: "from-[#797b84] to-[#baa1a7]",
+    bg: "bg-gradient-to-br from-[#797b84] to-[#baa1a7]",
+    text: "text-white",
+    brand: "Other",
+    pattern: "bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjEpIi8+Cjwvc3ZnPgo=')]"
+  },
 }
 
 export function WalletCard({ wallet, onEdit, onDelete }: WalletCardProps) {
   const Icon = walletIcons[wallet.type]
-  const colorClass = walletColors[wallet.type]
+  const style = walletStyles[wallet.type]
 
   const formatWalletType = (type: WalletType): string => {
     return type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
@@ -73,79 +115,90 @@ export function WalletCard({ wallet, onEdit, onDelete }: WalletCardProps) {
       transition={{ duration: 0.3 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       whileTap={{ scale: 0.98 }}
+      className="relative group"
     >
-      <Card className="relative group cursor-pointer shadow-sm hover:shadow-lg transition-shadow duration-300">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <motion.div 
-              className={`p-2 rounded-lg ${colorClass}`}
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Icon className="h-4 w-4" />
-            </motion.div>
+      {/* Minimalist Retro Design */}
+      <div className={`
+        relative w-full h-40 rounded-xl cursor-pointer
+        ${style.bg} border border-black/10
+        shadow-sm hover:shadow-md transition-all duration-200
+        hover:-translate-y-1
+      `}>        
+        {/* Simple Header */}
+        <div className="flex justify-between items-center p-5">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20">
+              <Icon className="h-5 w-5 text-white" />
+            </div>
             <div>
-              <div className="font-semibold">{wallet.name}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="font-semibold text-base text-white" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.4)'}}>
+                {style.brand}
+              </div>
+              <div className="text-sm text-white/70" style={{textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.4)'}}>
                 {formatWalletType(wallet.type)}
               </div>
             </div>
-          </CardTitle>
-          
-          <div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[160px]">
-                {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(wallet)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Wallet
-                  </DropdownMenuItem>
-                )}
-                {onDelete && (
-                  <DropdownMenuItem 
-                    onClick={() => onDelete(wallet.id)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Wallet
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        </CardHeader>
-        
-        <CardContent>
-          <motion.div 
-            className="text-2xl font-bold"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-          >
-            {formatCurrency(wallet.balance)}
-          </motion.div>
           
-          {wallet._count && (
-            <motion.p 
-              className="text-xs text-muted-foreground mt-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-            >
-              {wallet._count.transactions} transactions
-            </motion.p>
-          )}
-        </CardContent>
-      </Card>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-white/20 text-white"
+              >
+                <MoreVertical className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[140px]">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(wallet)}>
+                  <Edit className="mr-2 h-3 w-3" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(wallet.id)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-3 w-3" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        {/* Balance Section */}
+        <div className="px-5 pb-5">
+          <div className="flex justify-between items-end">
+            <div>
+              <div className="text-xs text-white/70 mb-1" style={{textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.4)'}}>
+                Current Balance
+              </div>
+              <motion.div 
+                className="text-xl font-bold font-mono text-white"
+                style={{textShadow: '1px 1px 2px rgba(0,0,0,0.4)'}}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                {formatCurrency(wallet.balance)}
+              </motion.div>
+            </div>
+            
+            <div className="text-right">
+              <div className="text-xs text-white/60 mb-1" style={{textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.3)'}}>
+                Account
+              </div>
+              <div className="text-sm text-white/70 truncate max-w-24" style={{textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.3)'}}>
+                {wallet.name}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </motion.div>
   )
 }

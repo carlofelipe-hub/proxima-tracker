@@ -4,41 +4,84 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.9924 0.0028 308.4292);
-  --foreground: oklch(0.3449 0.0427 301.3887);
-  --card: oklch(1.0000 0 0);
-  --card-foreground: oklch(0.3449 0.0427 301.3887);
-  --popover: oklch(1.0000 0 0);
-  --popover-foreground: oklch(0.3449 0.0427 301.3887);
-  --primary: oklch(0.5579 0.0610 304.9027);
-  --primary-foreground: oklch(0.9924 0.0028 308.4292);
-  --secondary: oklch(0.9318 0.0179 300.0552);
-  --secondary-foreground: oklch(0.3793 0.0568 306.7632);
-  --muted: oklch(0.9674 0.0082 301.3563);
-  --muted-foreground: oklch(0.5579 0.0610 304.9027);
-  --accent: oklch(0.9318 0.0179 300.0552);
-  --accent-foreground: oklch(0.3793 0.0568 306.7632);
-  --destructive: oklch(0.6368 0.2078 25.3313);
-  --destructive-foreground: oklch(0.9842 0.0034 247.8575);
-  --border: oklch(0.8882 0.0237 299.3278);
-  --input: oklch(0.8882 0.0237 299.3278);
-  --ring: oklch(0.5579 0.0610 304.9027);
-  --chart-1: oklch(0.6609 0.0644 304.2218);
-  --chart-2: oklch(0.5579 0.0610 304.9027);
-  --chart-3: oklch(0.4986 0.0611 305.2705);
-  --chart-4: oklch(0.4392 0.0580 305.6495);
-  --chart-5: oklch(0.3793 0.0568 306.7632);
-  --sidebar: oklch(0.9674 0.0082 301.3563);
-  --sidebar-foreground: oklch(0.5579 0.0610 304.9027);
-  --sidebar-primary: oklch(0.5579 0.0610 304.9027);
-  --sidebar-primary-foreground: oklch(0.9924 0.0028 308.4292);
-  --sidebar-accent: oklch(0.9318 0.0179 300.0552);
-  --sidebar-accent-foreground: oklch(0.3793 0.0568 306.7632);
-  --sidebar-border: oklch(0.8882 0.0237 299.3278);
-  --sidebar-ring: oklch(0.5579 0.0610 304.9027);
-  --font-sans: Poppins;
-  --font-serif: serif;
-  --font-mono: monospace;
+  /* New mimi-pink color palette */
+  --mimi-pink: #edd2e0;
+  --tea-rose-red: #edbbb4;
+  --pink-lavender: #dbabbb;
+  --rose-quartz: #baa1a7;
+  --gray: #797b84;
+
+  /* Base backgrounds */
+  --background: #FFFFFF;
+  --background-secondary: #edd2e0;
+  --foreground: #797b84;
+  --card: #FFFFFF;
+  --card-foreground: #797b84;
+  --popover: #FFFFFF;
+  --popover-foreground: #797b84;
+  
+  /* Primary colors using new palette */
+  --primary: #dbabbb;
+  --primary-foreground: #FFFFFF;
+  --secondary: #edd2e0;
+  --secondary-foreground: #797b84;
+  --muted: #edd2e0;
+  --muted-foreground: #baa1a7;
+  --accent: #edbbb4;
+  --accent-foreground: #797b84;
+  
+  /* Philippine flag accents */
+  --philippine-blue: #0038A8;
+  --philippine-red: #CE1126;
+  --philippine-yellow: #FCD116;
+  
+  /* Wallet brand colors using new palette */
+  --wallet-gcash: #dbabbb;
+  --wallet-bpi: #edbbb4;
+  --wallet-unionbank: #edd2e0;
+  --wallet-cash: #baa1a7;
+  --wallet-custom: #797b84;
+  
+  /* Status colors using complementary tones */
+  --status-income: #dbabbb;
+  --status-expense: #edbbb4;
+  --status-savings: #edd2e0;
+  --status-warning: #baa1a7;
+  
+  /* Text colors using new palette */
+  --text-primary: #797b84;
+  --text-secondary: #baa1a7;
+  --text-muted: #baa1a7;
+  --text-money: #dbabbb;
+  
+  /* System colors */
+  --destructive: #edbbb4;
+  --destructive-foreground: #FFFFFF;
+  --border: #edd2e0;
+  --input: #edd2e0;
+  --ring: #dbabbb;
+  
+  /* Chart colors using new palette */
+  --chart-1: #dbabbb;
+  --chart-2: #edbbb4;
+  --chart-3: #edd2e0;
+  --chart-4: #baa1a7;
+  --chart-5: #797b84;
+  
+  /* Sidebar using new palette */
+  --sidebar: #edd2e0;
+  --sidebar-foreground: #797b84;
+  --sidebar-primary: #dbabbb;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #edbbb4;
+  --sidebar-accent-foreground: #797b84;
+  --sidebar-border: #baa1a7;
+  --sidebar-ring: #dbabbb;
+  
+  /* Typography system */
+  --font-sans: "Poppins", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
@@ -53,41 +96,77 @@
 }
 
 .dark {
-  --background: oklch(0.2177 0.0136 291.7759);
-  --foreground: oklch(0.9163 0.0420 285.5407);
-  --card: oklch(0.2621 0.0204 289.0707);
-  --card-foreground: oklch(0.9163 0.0420 285.5407);
-  --popover: oklch(0.2621 0.0204 289.0707);
-  --popover-foreground: oklch(0.9163 0.0420 285.5407);
-  --primary: oklch(0.6609 0.0644 304.2218);
-  --primary-foreground: oklch(0.2177 0.0136 291.7759);
-  --secondary: oklch(0.4228 0.0529 283.9102);
-  --secondary-foreground: oklch(0.9163 0.0420 285.5407);
-  --muted: oklch(0.3512 0.0346 289.0681);
-  --muted-foreground: oklch(0.7279 0.0463 293.8159);
-  --accent: oklch(0.4228 0.0529 283.9102);
-  --accent-foreground: oklch(0.9163 0.0420 285.5407);
-  --destructive: oklch(0.3958 0.1331 25.7230);
-  --destructive-foreground: oklch(0.9842 0.0034 247.8575);
-  --border: oklch(0.3512 0.0346 289.0681);
-  --input: oklch(0.3512 0.0346 289.0681);
-  --ring: oklch(0.6609 0.0644 304.2218);
-  --chart-1: oklch(0.6609 0.0644 304.2218);
-  --chart-2: oklch(0.5579 0.0610 304.9027);
-  --chart-3: oklch(0.4986 0.0611 305.2705);
-  --chart-4: oklch(0.4392 0.0580 305.6495);
-  --chart-5: oklch(0.3793 0.0568 306.7632);
-  --sidebar: oklch(0.2621 0.0204 289.0707);
-  --sidebar-foreground: oklch(0.7279 0.0463 293.8159);
-  --sidebar-primary: oklch(0.6609 0.0644 304.2218);
-  --sidebar-primary-foreground: oklch(0.2177 0.0136 291.7759);
-  --sidebar-accent: oklch(0.4228 0.0529 283.9102);
-  --sidebar-accent-foreground: oklch(0.9163 0.0420 285.5407);
-  --sidebar-border: oklch(0.3512 0.0346 289.0681);
-  --sidebar-ring: oklch(0.6609 0.0644 304.2218);
-  --font-sans: Poppins;
-  --font-serif: serif;
-  --font-mono: monospace;
+  /* Base backgrounds - darker theme with new palette */
+  --background: #2A2A2A;
+  --background-secondary: #3A3A3A;
+  --foreground: #edd2e0;
+  --card: #3A3A3A;
+  --card-foreground: #edd2e0;
+  --popover: #3A3A3A;
+  --popover-foreground: #edd2e0;
+  
+  /* Primary colors adapted for dark mode */
+  --primary: #dbabbb;
+  --primary-foreground: #2A2A2A;
+  --secondary: #2A3A3A;
+  --secondary-foreground: #E8E8E8;
+  --muted: #3A3A2A;
+  --muted-foreground: #B8B8B8;
+  --accent: #2A3A2A;
+  --accent-foreground: #E8E8E8;
+  
+  /* Philippine flag accents (same) */
+  --philippine-blue: #0038A8;
+  --philippine-red: #CE1126;
+  --philippine-yellow: #FCD116;
+  
+  /* Wallet brand colors (same) */
+  --wallet-gcash: #007DFE;
+  --wallet-bpi: #FF6B35;
+  --wallet-unionbank: #00A86B;
+  --wallet-cash: #4ECDC4;
+  --wallet-custom: #9B59B6;
+  
+  /* Status colors (same) */
+  --status-income: #00D2FF;
+  --status-expense: #FF6B6B;
+  --status-savings: #00B894;
+  --status-warning: #FAB005;
+  
+  /* Text colors for dark mode */
+  --text-primary: #E8E8E8;
+  --text-secondary: #B8B8B8;
+  --text-muted: #888888;
+  --text-money: #4ECB71;
+  
+  /* System colors */
+  --destructive: #FF6B6B;
+  --destructive-foreground: #1A1A1A;
+  --border: #3A3A3A;
+  --input: #3A3A3A;
+  --ring: #007DFE;
+  
+  /* Chart colors using wallet colors (same) */
+  --chart-1: #007DFE;
+  --chart-2: #FF6B35;
+  --chart-3: #00A86B;
+  --chart-4: #4ECDC4;
+  --chart-5: #9B59B6;
+  
+  /* Sidebar for dark mode */
+  --sidebar: #2A2A2A;
+  --sidebar-foreground: #B8B8B8;
+  --sidebar-primary: #007DFE;
+  --sidebar-primary-foreground: #1A1A1A;
+  --sidebar-accent: #3A2A2A;
+  --sidebar-accent-foreground: #E8E8E8;
+  --sidebar-border: #3A3A3A;
+  --sidebar-ring: #007DFE;
+  
+  /* Typography system (same fonts) */
+  --font-sans: "Poppins", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
@@ -101,6 +180,7 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -133,7 +213,33 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Philippine accent colors */
+  --color-philippine-blue: var(--philippine-blue);
+  --color-philippine-red: var(--philippine-red);
+  --color-philippine-yellow: var(--philippine-yellow);
+
+  /* Wallet brand colors */
+  --color-wallet-gcash: var(--wallet-gcash);
+  --color-wallet-bpi: var(--wallet-bpi);
+  --color-wallet-unionbank: var(--wallet-unionbank);
+  --color-wallet-cash: var(--wallet-cash);
+  --color-wallet-custom: var(--wallet-custom);
+
+  /* Status colors */
+  --color-status-income: var(--status-income);
+  --color-status-expense: var(--status-expense);
+  --color-status-savings: var(--status-savings);
+  --color-status-warning: var(--status-warning);
+
+  /* Text colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-money: var(--text-money);
+
+  /* Typography */
   --font-sans: var(--font-sans);
+  --font-body: var(--font-body);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
@@ -169,5 +275,266 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+}
+
+/* Filipino Design System Utilities */
+@layer utilities {
+  /* Money display styles */
+  .money-display {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-money);
+    letter-spacing: -0.025em;
+  }
+  
+  .money-large {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-money);
+    letter-spacing: -0.025em;
+    font-size: 1.75rem;
+    line-height: 2rem;
+  }
+  
+  .money-medium {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-money);
+    letter-spacing: -0.025em;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  
+  .money-small {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-money);
+    letter-spacing: -0.025em;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  /* Wallet card styles */
+  .wallet-card {
+    @apply rounded-2xl p-6 shadow-lg transition-all duration-300;
+    background: linear-gradient(135deg, var(--card) 0%, var(--background-secondary) 100%);
+  }
+  
+  .wallet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Filipino button styles */
+  .btn-peso {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-income {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, var(--status-income) 0%, #00B8E6 100%);
+    color: white;
+  }
+  
+  .btn-expense {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, var(--status-expense) 0%, #FF5252 100%);
+    color: white;
+  }
+  
+  .btn-transfer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, var(--wallet-gcash) 0%, #0066CC 100%);
+    color: white;
+  }
+  
+  /* Status indicator styles */
+  .status-income {
+    color: var(--status-income);
+  }
+  
+  .status-expense {
+    color: var(--status-expense);
+  }
+  
+  .status-savings {
+    color: var(--status-savings);
+  }
+  
+  .status-warning {
+    color: var(--status-warning);
+  }
+  
+  /* Wallet brand colors */
+  .wallet-gcash {
+    background-color: var(--wallet-gcash);
+  }
+  
+  .wallet-bpi {
+    background-color: var(--wallet-bpi);
+  }
+  
+  .wallet-unionbank {
+    background-color: var(--wallet-unionbank);
+  }
+  
+  .wallet-cash {
+    background-color: var(--wallet-cash);
+  }
+  
+  .wallet-custom {
+    background-color: var(--wallet-custom);
+  }
+  
+  /* Text utilities */
+  .text-filipino {
+    font-family: var(--font-sans);
+    font-weight: 600;
+  }
+  
+  .text-money {
+    color: var(--text-money);
+  }
+  
+  /* Manila folder aesthetic */
+  .budget-folder {
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border-left-width: 4px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background: linear-gradient(90deg, var(--muted) 0%, var(--background) 100%);
+    border-left-color: var(--philippine-yellow);
+  }
+  
+  /* Retro counter display */
+  .money-counter {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-family: monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    color: #00ff41;
+    text-shadow: 0 0 10px #00ff41;
+    border: 2px solid #333;
+  }
+  
+  /* Floating navigation */
+  .floating-nav {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border-radius: 9999px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    padding: 0.75rem 1.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Transaction feed card */
+  .transaction-card {
+    background-color: var(--card);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+  
+  .transaction-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  /* Smooth animations */
+  .animate-count-up {
+    animation: countUp 0.5s ease-out;
+  }
+  
+  .animate-bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }

@@ -2,10 +2,53 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { OpenAI } from "openai"
+import crypto from "crypto"
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
+
+// Generate hash for financial data to check for changes
+function generateDataHash(data: Record<string, unknown>): string {
+  const dataString = JSON.stringify(data, null, 0)
+  return crypto.createHash('sha256').update(dataString).digest('hex')
+}
+
+// Check if cached insights are still valid
+function shouldRegenerateInsights(cachedInsight: { dataHash: string; validUntil: string | Date }, currentDataHash: string): boolean {
+  // Regenerate if data has changed
+  if (cachedInsight.dataHash !== currentDataHash) {
+    return true
+  }
+  
+  // Regenerate if insights are older than 24 hours
+  const now = new Date()
+  const validUntil = new Date(cachedInsight.validUntil)
+  if (now > validUntil) {
+    return true
+  }
+  
+  return false
+}
+
+// Clean up old cached insights for a user
+async function cleanupOldInsights(userId: string): Promise<void> {
+  try {
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    
+    await prisma.aIInsight.deleteMany({
+      where: {
+        userId,
+        createdAt: {
+          lt: oneWeekAgo
+        }
+      }
+    })
+  } catch (error) {
+    console.error("Error cleaning up old insights:", error)
+  }
+}
 
 export async function GET() {
   try {
@@ -156,6 +199,63 @@ export async function GET() {
     const transfers = recentTransactions.filter(t => t.type === "TRANSFER")
     const totalTransferAmount = transfers.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0)
     const totalTransferFees = transfers.reduce((sum, t) => sum + parseFloat(t.transferFee?.toString() || '0'), 0)
+
+    // Generate hash of current financial data for caching
+    const financialData = {
+      recentTransactions: recentTransactions.length,
+      recentIncome,
+      recentExpenses,
+      totalBalance,
+      categorySpending,
+      walletBreakdown,
+      plannedExpenses: plannedExpenses.length,
+      transfers: transfers.length
+    }
+    const currentDataHash = generateDataHash(financialData)
+    
+    // Check for cached insights
+    const cachedInsight = await prisma.aIInsight.findFirst({
+      where: {
+        userId: session.user.id
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    
+    // Return cached insights if still valid
+    if (cachedInsight && !shouldRegenerateInsights(cachedInsight, currentDataHash)) {
+      const insights = {
+        summary: cachedInsight.summary,
+        recommendations: JSON.parse(cachedInsight.recommendations),
+        spending_analysis: cachedInsight.spendingAnalysis,
+        budget_suggestions: cachedInsight.budgetSuggestions ? JSON.parse(cachedInsight.budgetSuggestions) : undefined,
+        alerts: cachedInsight.alerts ? JSON.parse(cachedInsight.alerts) : [],
+        trends: cachedInsight.trends ? JSON.parse(cachedInsight.trends) : undefined
+      }
+      
+      // Also create analytics data
+      const analytics = {
+        totalBalance,
+        monthlyIncome: recentIncome,
+        monthlyExpenses: recentExpenses,
+        topCategories: Object.entries(categorySpending)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([category, amount]) => ({
+            category,
+            amount,
+            percentage: recentExpenses > 0 ? (amount / recentExpenses * 100) : 0
+          })),
+        spendingTrend: previousExpenses > 0 ? 
+          (recentExpenses > previousExpenses * 1.1 ? "INCREASING" : 
+           recentExpenses < previousExpenses * 0.9 ? "DECREASING" : "STABLE") : "STABLE",
+        savingsRate: recentIncome > 0 ? ((recentIncome - recentExpenses) / recentIncome * 100) : 0,
+        recommendations: insights.recommendations
+      }
+      
+      return NextResponse.json({ insights, analytics, cached: true })
+    }
 
     const analysisPrompt = `
 As a financial advisor for Filipino users, analyze this comprehensive financial data and provide insights in JSON format only. Do not include any markdown formatting or code blocks in your response.
@@ -315,7 +415,33 @@ Focus on Philippine financial context, GCash/banking habits, and practical advic
       recommendations: Array.isArray(insights?.recommendations) ? insights.recommendations : []
     }
 
-    return NextResponse.json({ insights, analytics })
+    // Save insights to database for caching
+    try {
+      const validUntil = new Date()
+      validUntil.setHours(validUntil.getHours() + 24) // Cache for 24 hours
+      
+      await prisma.aIInsight.create({
+        data: {
+          userId: session.user.id,
+          summary: insights.summary,
+          recommendations: JSON.stringify(insights.recommendations),
+          spendingAnalysis: insights.spending_analysis,
+          budgetSuggestions: insights.budget_suggestions ? JSON.stringify(insights.budget_suggestions) : null,
+          alerts: insights.alerts ? JSON.stringify(insights.alerts) : null,
+          trends: insights.trends ? JSON.stringify(insights.trends) : null,
+          dataHash: currentDataHash,
+          validUntil
+        }
+      })
+      
+      // Clean up old insights to prevent database bloat
+      await cleanupOldInsights(session.user.id)
+    } catch (saveError) {
+      console.error("Error saving insights to cache:", saveError)
+      // Continue anyway - caching failure shouldn't break the response
+    }
+
+    return NextResponse.json({ insights, analytics, cached: false })
   } catch (error) {
     console.error("Error generating insights:", error)
     
@@ -341,6 +467,35 @@ Focus on Philippine financial context, GCash/banking habits, and practical advic
         insights: fallbackInsights,
         analytics: fallbackAnalytics
       },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE endpoint to manually clear cached insights
+export async function DELETE() {
+  try {
+    const session = await auth()
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Delete all cached insights for the user
+    await prisma.aIInsight.deleteMany({
+      where: {
+        userId: session.user.id
+      }
+    })
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "AI insights cache cleared successfully" 
+    })
+  } catch (error) {
+    console.error("Error clearing insights cache:", error)
+    return NextResponse.json(
+      { error: "Failed to clear insights cache" },
       { status: 500 }
     )
   }

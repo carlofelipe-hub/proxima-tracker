@@ -58,6 +58,7 @@ model User {
   incomeSources  IncomeSource[]
   budgetPeriods  BudgetPeriod[]
   plannedExpenses PlannedExpense[]
+  aiInsights     AIInsight[]
 }
 
 model VerificationToken {
@@ -210,6 +211,27 @@ model PlannedExpense {
   @@index([targetDate])
   @@index([status])
   @@index([confidenceLevel])
+}
+
+model AIInsight {
+  id                String      @id @default(cuid())
+  userId            String
+  summary           String      @db.Text
+  recommendations   String      @db.Text  // JSON array of recommendations
+  spendingAnalysis  String      @db.Text
+  budgetSuggestions String?     @db.Text  // JSON object of budget suggestions
+  alerts            String?     @db.Text  // JSON array of alerts
+  trends            String?     @db.Text  // JSON object of trends
+  dataHash          String      // Hash of the financial data used to generate insights
+  validUntil        DateTime    // Insights expire after certain conditions
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([validUntil])
+  @@index([dataHash])
 }
 
 // Enums

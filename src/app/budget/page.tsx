@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { SidebarNav } from "@/components/navigation/sidebar-nav"
 import { BudgetPeriodSetup } from "@/components/budget/budget-period-setup"
 import { IncomeSourceSetup } from "@/components/budget/income-source-setup"
+import { BudgetFolder, BudgetFolderGrid } from "@/components/budget/budget-folder"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -199,34 +200,46 @@ export default function BudgetPage() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {currentBudget.daysRemaining}
-                      </div>
-                      <div className="text-sm text-blue-800">Days Left</div>
-                    </div>
+                <CardContent className="space-y-6">
+                  {/* Budget Folders */}
+                  <BudgetFolderGrid>
+                    <BudgetFolder
+                      title="Total Income"
+                      amount={currentBudget.totalIncome}
+                      category="income"
+                      period={`${formatPhilippineDate(currentBudget.startDate)} - ${formatPhilippineDate(currentBudget.endDate)}`}
+                    />
                     
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-lg font-bold text-green-600">
+                    <BudgetFolder
+                      title="Budget Used"
+                      amount={currentBudget.budgetUsed}
+                      target={currentBudget.totalIncome}
+                      category="expense"
+                      progress={(currentBudget.budgetUsed / currentBudget.totalIncome) * 100}
+                    />
+                    
+                    <BudgetFolder
+                      title="Budget Remaining"
+                      amount={currentBudget.budgetRemaining}
+                      category="savings"
+                      period={`${currentBudget.daysRemaining} days left`}
+                    />
+                  </BudgetFolderGrid>
+                  
+                  {/* Additional Stats Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                      <div className="text-2xl font-bold text-blue-600">
                         {formatCurrency(currentBudget.dailyBudget)}
                       </div>
-                      <div className="text-sm text-green-800">Daily Budget</div>
+                      <div className="text-sm text-blue-800">Daily Budget Allowance</div>
                     </div>
                     
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <div className="text-lg font-bold text-purple-600">
-                        {formatCurrency(currentBudget.budgetRemaining)}
-                      </div>
-                      <div className="text-sm text-purple-800">Remaining</div>
-                    </div>
-                    
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <div className="text-lg font-bold text-orange-600">
+                    <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
+                      <div className="text-2xl font-bold text-orange-600">
                         {formatCurrency(currentBudget.avgDailySpending)}
                       </div>
-                      <div className="text-sm text-orange-800">Avg Daily Spent</div>
+                      <div className="text-sm text-orange-800">Average Daily Spending</div>
                     </div>
                   </div>
 

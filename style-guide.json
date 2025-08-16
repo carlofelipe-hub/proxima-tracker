@@ -1,0 +1,159 @@
+{
+  "proxima_tracker_style_guide": {
+    "design_principles": [
+      "Mobile-first Filipino budget tracking",
+      "Clean, playful yet financially responsible aesthetic",
+      "Retro-inspired wallet cards and cash counter widgets",
+      "Soft pastel color palette with Philippine flag accent colors",
+      "Money-focused iconography with Gen-Z appeal",
+      "Trust-building design for financial confidence"
+    ],
+    "color_palette": {
+      "backgrounds": ["#FFFFFF", "#F8F9FA"],
+      "primary_colors": ["#FFE5E5", "#E5F3FF", "#FFF8E5", "#E5FFE8"],
+      "philippine_accents": ["#0038A8", "#CE1126", "#FCD116"],
+      "wallet_colors": {
+        "gcash": "#007DFE",
+        "bpi": "#FF6B35", 
+        "unionbank": "#00A86B",
+        "cash": "#4ECDC4",
+        "custom": "#9B59B6"
+      },
+      "status_colors": {
+        "income": "#00D2FF",
+        "expense": "#FF6B6B",
+        "savings": "#00B894",
+        "warning": "#FAB005"
+      },
+      "text": {
+        "primary": "#2C3E50",
+        "secondary": "#5A6C7D",
+        "muted": "#95A5A6",
+        "money": "#27AE60"
+      }
+    },
+    "typography": {
+      "heading_font": "Poppins (friendly, Filipino-familiar)",
+      "body_font": "Inter (clean readability for numbers)",
+      "money_font": "JetBrains Mono (monospace for amounts)",
+      "font_weights": {
+        "heading": "600-700",
+        "money": "700",
+        "body": "400-500",
+        "labels": "500"
+      },
+      "text_sizes": {
+        "money_large": "24-28px",
+        "heading": "18-22px", 
+        "subheading": "14-16px",
+        "body": "12-14px",
+        "labels": "10-12px"
+      }
+    },
+    "philippine_elements": {
+      "currency": {
+        "symbol": "₱",
+        "format": "₱ 1,234.56",
+        "large_amounts": "₱ 1.2K, ₱ 15.5K"
+      },
+      "local_banks": ["GCash", "BPI", "UnionBank", "BDO", "Metrobank"],
+      "common_categories": ["Pagkain", "Sakay", "Load", "Bills", "Shopee", "Jollibee"]
+    },
+    "icons": {
+      "style": "Rounded, friendly outline icons with occasional filled versions",
+      "money_icons": ["Peso sign", "Wallet", "Piggy bank", "Cash stack"],
+      "wallet_icons": ["Phone (GCash)", "Credit card", "Bank building", "Coins"],
+      "category_icons": ["Food emoji", "Transport", "Shopping bag", "Phone signal"]
+    },
+    "components": {
+      "wallet_cards": {
+        "style": "Credit card-inspired rounded rectangles with bank branding",
+        "elements": ["Bank logo", "Balance", "Card holder name", "Account type"],
+        "animations": "Subtle hover/tap effects, balance count-up"
+      },
+      "budget_folders": {
+        "design": "Manila folder aesthetic with peso amounts as labels",
+        "usage": "Monthly budgets, savings goals, expense categories",
+        "colors": "Pastel variants of bank brand colors"
+      },
+      "money_counter": {
+        "style": "Retro calculator/cash register display",
+        "design": "Digital green text on dark background",
+        "usage": "Total balance, monthly spending, savings progress"
+      },
+      "transaction_feed": {
+        "style": "Social media feed aesthetic for financial activity",
+        "elements": ["Transaction icon", "Amount", "Category", "Time", "Wallet source"],
+        "design": "Cards with soft shadows, categorized by income/expense colors"
+      },
+      "savings_jars": {
+        "design": "Cute piggy bank or jar illustrations with progress bars",
+        "usage": "Emergency fund, vacation fund, gadget fund",
+        "animations": "Coins dropping in, progress filling up"
+      },
+      "ai_assistant": {
+        "style": "Friendly Filipino mascot (e.g., cute carabao or jeepney)",
+        "usage": "Budget tips, spending insights, financial advice",
+        "personality": "Helpful kuya/ate giving money advice"
+      },
+      "expense_tracker": {
+        "daily_view": "Instagram story-style vertical cards for daily expenses",
+        "weekly_view": "Horizontal scroll of spending categories",
+        "monthly_view": "Calendar grid with spending heatmap"
+      },
+      "buttons": {
+        "primary": "Bold rounded buttons with peso sign icons",
+        "add_money": "Green gradient with '+' and peso symbol",
+        "spend": "Red gradient with '-' and peso symbol",
+        "transfer": "Blue gradient with transfer arrows"
+      },
+      "navigation": {
+        "bottom_nav": {
+          "icons": ["Home (wallet)", "Transactions (list)", "Analytics (chart)", "AI (robot)", "Profile (user)"],
+          "style": "Floating pill design with active state highlighting"
+        },
+        "quick_actions": {
+          "floating_buttons": ["Add expense", "Add income", "Transfer money"],
+          "position": "Bottom right, expandable on tap"
+        }
+      }
+    },
+    "layouts": {
+      "dashboard": {
+        "hero_section": "Total balance display with all wallets summary",
+        "quick_stats": "This month: Income, Expenses, Savings",
+        "wallet_grid": "2-column grid of wallet cards",
+        "recent_transactions": "Latest 5 transactions with 'See all' link"
+      },
+      "wallets_screen": {
+        "layout": "Vertical stack of wallet cards with add new wallet option",
+        "each_card": "Bank logo, account name, current balance, quick actions"
+      },
+      "transactions_screen": {
+        "filters": ["All", "Income", "Expenses", "This Week", "This Month"],
+        "transaction_cards": "Feed-style with category icons and colored amounts",
+        "search": "Top search bar with peso amount and category filters"
+      },
+      "analytics_screen": {
+        "spending_chart": "Donut chart with category breakdown",
+        "trends": "Line graph showing spending patterns",
+        "ai_insights": "Card with mascot giving personalized advice"
+      },
+      "ai_chat": {
+        "style": "Messenger-like interface with budget-focused quick replies",
+        "suggestions": ["How much can I spend today?", "Show my biggest expenses", "Help me save for vacation"]
+      }
+    },
+    "animations": {
+      "money_transitions": "Numbers counting up/down with satisfying easing",
+      "wallet_interactions": "Cards slightly lifting on tap with shadow increase",
+      "category_selection": "Bouncy icon selections with color transitions",
+      "success_states": "Confetti for goals reached, checkmark animations for completed transactions"
+    },
+    "personality": {
+      "tone": "Friendly, encouraging Filipino millennial/Gen-Z financial buddy",
+      "copy_style": "Mix of English and Tagalog, use of 'tara', 'uy', 'ang galing!'",
+      "achievement_language": "Congratulatory Filipino expressions for financial wins"
+    }
+  }
+}

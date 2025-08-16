@@ -20,6 +20,15 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Filipino peso-themed buttons
+        income:
+          "bg-gradient-to-r from-[#00D2FF] to-[#00B8E6] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-medium rounded-xl",
+        expense:
+          "bg-gradient-to-r from-[#FF6B6B] to-[#FF5252] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-medium rounded-xl",
+        transfer:
+          "bg-gradient-to-r from-[#007DFE] to-[#0066CC] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-medium rounded-xl",
+        peso:
+          "bg-gradient-to-r from-[#007DFE] to-[#0066CC] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-medium rounded-xl",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
