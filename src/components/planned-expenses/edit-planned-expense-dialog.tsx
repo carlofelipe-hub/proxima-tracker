@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select"
 import { getPhilippineDateForInput, fromDateInputToPhilippineTime, toPhilippineDate } from "@/lib/timezone"
 import { invalidateInsightsCache } from "@/lib/cached-insights"
+import { toast } from "sonner"
 
 const editExpenseSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -172,15 +173,18 @@ export function EditPlannedExpenseDialog({ expense, wallets, onExpenseUpdated }:
       })
 
       if (response.ok) {
+        toast.success(`"${data.title}" has been updated successfully!`)
         setOpen(false)
         onExpenseUpdated()
         invalidateInsightsCache() // Trigger insights cache invalidation
       } else {
         const error = await response.json()
         console.error("Error updating expense:", error)
+        toast.error("Failed to update planned expense. Please try again.")
       }
     } catch (error) {
       console.error("Error updating planned expense:", error)
+      toast.error("Failed to update planned expense. Please try again.")
     } finally {
       setIsLoading(false)
     }

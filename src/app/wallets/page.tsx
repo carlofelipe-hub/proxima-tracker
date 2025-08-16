@@ -11,6 +11,7 @@ import { EditWalletForm } from "@/components/wallets/edit-wallet-form"
 import { DeleteWalletDialog } from "@/components/wallets/delete-wallet-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Wallet } from "lucide-react"
+import { toast } from "sonner"
 
 interface Wallet {
   id: string
@@ -95,6 +96,7 @@ export default function WalletsPage() {
       })
 
       if (response.ok) {
+        toast.success(`"${selectedWallet.name}" wallet has been deleted successfully!`)
         setIsDeleteDialogOpen(false)
         setSelectedWallet(null)
         fetchWallets()
@@ -103,6 +105,7 @@ export default function WalletsPage() {
       }
     } catch (error) {
       console.error("Error deleting wallet:", error)
+      toast.error("Failed to delete wallet. Please try again.")
     } finally {
       setIsDeleting(false)
     }

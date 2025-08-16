@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowRight, AlertCircle, CheckCircle2, Target } from "lucide-react"
 import { AffordabilityCheck } from "./affordability-check"
 import { invalidateInsightsCache } from "@/lib/cached-insights"
+import { toast } from "sonner"
 
 const transactionSchema = z.object({
   amount: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -261,6 +262,16 @@ export function AddTransactionForm({
         throw new Error(error.error || "Failed to create transaction")
       }
 
+      // Show success message based on transaction type
+      const transactionTypeNames = {
+        [TransactionType.INCOME]: 'Income',
+        [TransactionType.EXPENSE]: 'Expense',
+        [TransactionType.TRANSFER]: 'Transfer'
+      }
+      
+      const typeName = transactionTypeNames[data.type]
+      toast.success(`${typeName} transaction has been added successfully!`)
+
       form.reset()
       setSelectedFromWallet(null)
       setSelectedToWallet(null)
@@ -272,6 +283,7 @@ export function AddTransactionForm({
       invalidateInsightsCache() // Trigger insights cache invalidation
     } catch (error) {
       console.error("Error creating transaction:", error)
+      toast.error("Failed to create transaction. Please try again.")
     } finally {
       setIsLoading(false)
     }

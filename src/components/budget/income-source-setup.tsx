@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { addDaysInPhilippineTime, getNowInPhilippineTime } from "@/lib/timezone"
 import { formatCurrency } from "@/lib/currency"
+import { toast } from "sonner"
 
 const incomeSourceSchema = z.object({
   name: z.string().min(1, "Income source name is required"),
@@ -44,6 +45,21 @@ const incomeSourceSchema = z.object({
 
 type IncomeSourceFormData = z.infer<typeof incomeSourceSchema>
 
+interface IncomeSource {
+  id: string
+  name: string
+  amount: number
+  frequency: string
+  nextPayDate: string
+  lastPayDate?: string
+  isActive: boolean
+  wallet?: {
+    id: string
+    name: string
+    type: string
+  }
+}
+
 interface IncomeSourceSetupProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -53,6 +69,7 @@ interface IncomeSourceSetupProps {
     name: string
     type: string
   }>
+  editingIncome?: IncomeSource | null
 }
 
 const frequencyLabels = {
@@ -69,27 +86,52 @@ export function IncomeSourceSetup({
   open, 
   onOpenChange, 
   onSuccess,
-  wallets = []
+  wallets = [],
+  editingIncome = null
 }: IncomeSourceSetupProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<IncomeSourceFormData>({
     resolver: zodResolver(incomeSourceSchema),
     defaultValues: {
-      name: "",
-      amount: "",
-      frequency: PayFrequency.MONTHLY,
-      nextPayDate: "",
-      walletId: "none",
+      name: editingIncome?.name || "",
+      amount: editingIncome?.amount?.toString() || "",
+      frequency: (editingIncome?.frequency as PayFrequency) || PayFrequency.MONTHLY,
+      nextPayDate: editingIncome?.nextPayDate ? editingIncome.nextPayDate.slice(0, 10) : "",
+      walletId: editingIncome?.wallet?.id || "none",
     },
   })
+
+  useEffect(() => {
+    if (editingIncome) {
+      form.reset({
+        name: editingIncome.name,
+        amount: editingIncome.amount.toString(),
+        frequency: editingIncome.frequency as PayFrequency,
+        nextPayDate: editingIncome.nextPayDate.slice(0, 10),
+        walletId: editingIncome.wallet?.id || "none",
+      })
+    } else {
+      form.reset({
+        name: "",
+        amount: "",
+        frequency: PayFrequency.MONTHLY,
+        nextPayDate: "",
+        walletId: "none",
+      })
+    }
+  }, [editingIncome, form])
 
   const onSubmit = async (data: IncomeSourceFormData) => {
     setIsLoading(true)
     
     try {
-      const response = await fetch("/api/income-sources", {
-        method: "POST",
+      const isEditing = !!editingIncome
+      const url = isEditing ? `/api/income-sources/${editingIncome.id}` : "/api/income-sources"
+      const method = isEditing ? "PUT" : "POST"
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -101,14 +143,16 @@ export function IncomeSourceSetup({
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create income source")
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} income source`)
       }
 
+      toast.success(`"${data.name}" income source has been ${isEditing ? 'updated' : 'created'} successfully!`)
       form.reset()
       onOpenChange(false)
       onSuccess()
     } catch (error) {
-      console.error("Error creating income source:", error)
+      console.error(`Error ${editingIncome ? 'updating' : 'creating'} income source:`, error)
+      toast.error(`Failed to ${editingIncome ? 'update' : 'create'} income source. Please try again.`)
     } finally {
       setIsLoading(false)
     }
@@ -153,7 +197,7 @@ export function IncomeSourceSetup({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Income Source</DialogTitle>
+          <DialogTitle>{editingIncome ? 'Edit Income Source' : 'Add Income Source'}</DialogTitle>
           <DialogDescription>
             Track your income and payroll cycles for better budget planning and affordability checking.
           </DialogDescription>
@@ -329,7 +373,10 @@ export function IncomeSourceSetup({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Income Source"}
+                {isLoading 
+                  ? (editingIncome ? "Updating..." : "Adding...") 
+                  : (editingIncome ? "Update Income Source" : "Add Income Source")
+                }
               </Button>
             </div>
           </form>

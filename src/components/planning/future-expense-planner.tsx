@@ -34,6 +34,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/currency"
 import { getPhilippineDateForInput, formatPhilippineDate, fromDateInputToPhilippineTime } from "@/lib/timezone"
+import { toast } from "sonner"
 
 const futureExpenseSchema = z.object({
   amount: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -240,14 +241,14 @@ export function FutureExpensePlanner({ wallets }: FutureExpensePlannerProps) {
       })
 
       if (response.ok) {
-        // Show success message or redirect to planned expenses
-        alert("Expense saved to your planned expenses!")
+        const expenseTitle = formData.description || `${formData.category || 'Expense'} - ${formatCurrency(result.targetAmount)}`
+        toast.success(`"${expenseTitle}" has been saved to your planned expenses!`)
       } else {
-        alert("Failed to save planned expense")
+        toast.error("Failed to save planned expense. Please try again.")
       }
     } catch (error) {
       console.error("Error saving planned expense:", error)
-      alert("Failed to save planned expense")
+      toast.error("Failed to save planned expense. Please try again.")
     } finally {
       setIsSaving(false)
     }

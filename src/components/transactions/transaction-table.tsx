@@ -1,11 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/currency"
 import { TransactionType } from "@prisma/client"
-import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft } from "lucide-react"
+import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import { formatPhilippineDateTime } from "@/lib/timezone"
+import { EditTransactionDialog } from "./edit-transaction-dialog"
+import { DeleteTransactionDialog } from "./delete-transaction-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Transaction {
   id: string
@@ -14,6 +24,7 @@ interface Transaction {
   category: string
   description?: string
   date: string
+  walletId?: string
   wallet: {
     name: string
     type: string
@@ -25,12 +36,22 @@ interface Transaction {
   transferFee?: number
 }
 
-interface TransactionTableProps {
-  transactions: Transaction[]
-  isLoading?: boolean
+interface Wallet {
+  id: string
+  name: string
+  type: string
 }
 
-export function TransactionTable({ transactions, isLoading }: TransactionTableProps) {
+interface TransactionTableProps {
+  transactions: Transaction[]
+  wallets?: Wallet[]
+  isLoading?: boolean
+  onTransactionUpdate?: () => void
+}
+
+export function TransactionTable({ transactions, wallets, isLoading, onTransactionUpdate }: TransactionTableProps) {
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
+  const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null)
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -72,6 +93,7 @@ export function TransactionTable({ transactions, isLoading }: TransactionTablePr
             <TableHead className="hidden md:table-cell">Wallet</TableHead>
             <TableHead className="hidden lg:table-cell">Date</TableHead>
             <TableHead className="text-right">Amount</TableHead>
+            {wallets && <TableHead className="w-[60px]">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -154,10 +176,61 @@ export function TransactionTable({ transactions, isLoading }: TransactionTablePr
                   )}
                 </div>
               </TableCell>
+              {wallets && (
+                <TableCell>
+                  {transaction.type !== TransactionType.TRANSFER && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditTransaction(transaction)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setDeleteTransaction(transaction)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      
+      {wallets && (
+        <>
+          <EditTransactionDialog
+            transaction={editTransaction}
+            wallets={wallets}
+            open={!!editTransaction}
+            onOpenChange={(open) => !open && setEditTransaction(null)}
+            onSuccess={() => {
+              setEditTransaction(null)
+              onTransactionUpdate?.()
+            }}
+          />
+          
+          <DeleteTransactionDialog
+            transaction={deleteTransaction}
+            open={!!deleteTransaction}
+            onOpenChange={(open) => !open && setDeleteTransaction(null)}
+            onSuccess={() => {
+              setDeleteTransaction(null)
+              onTransactionUpdate?.()
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }

@@ -1,12 +1,22 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/currency"
 import { TransactionType } from "@prisma/client"
 import { motion } from "framer-motion"
-import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Calendar, Wallet } from "lucide-react"
+import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Calendar, Wallet, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import { formatPhilippineDateTime } from "@/lib/timezone"
+import { EditTransactionDialog } from "./edit-transaction-dialog"
+import { DeleteTransactionDialog } from "./delete-transaction-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Transaction {
   id: string
@@ -15,6 +25,7 @@ interface Transaction {
   category: string
   description?: string
   date: string
+  walletId: string
   wallet: {
     name: string
     type: string
@@ -26,12 +37,22 @@ interface Transaction {
   transferFee?: number
 }
 
-interface TransactionListProps {
-  transactions: Transaction[]
-  isLoading?: boolean
+interface Wallet {
+  id: string
+  name: string
+  type: string
 }
 
-export function TransactionList({ transactions, isLoading }: TransactionListProps) {
+interface TransactionListProps {
+  transactions: Transaction[]
+  wallets: Wallet[]
+  isLoading?: boolean
+  onTransactionUpdate?: () => void
+}
+
+export function TransactionList({ transactions, wallets, isLoading, onTransactionUpdate }: TransactionListProps) {
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null)
+  const [deleteTransaction, setDeleteTransaction] = useState<Transaction | null>(null)
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -101,7 +122,7 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
           whileHover={{ x: 4 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         >
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-3 sm:p-4">
               <div className="flex justify-between items-start gap-3">
                 <div className="flex-1 min-w-0">
@@ -182,36 +203,88 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   </motion.div>
                 </div>
                 
-                <motion.div 
-                  className="text-right flex-shrink-0"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 + 0.7, duration: 0.4 }}
-                >
-                  <div className="space-y-1">
-                    <div className={`text-sm sm:text-lg font-bold ${
-                      transaction.type === TransactionType.INCOME 
-                        ? "text-green-600" 
-                        : transaction.type === TransactionType.TRANSFER
-                        ? "text-blue-600"
-                        : "text-red-600"
-                    }`}>
-                      {transaction.type === TransactionType.INCOME ? "+" : 
-                       transaction.type === TransactionType.TRANSFER ? "" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </div>
-                    {transaction.type === TransactionType.TRANSFER && transaction.transferFee && transaction.transferFee > 0 && (
-                      <div className="text-xs text-red-600">
-                        Fee: {formatCurrency(transaction.transferFee)}
+                <div className="flex items-start gap-2">
+                  <motion.div 
+                    className="text-right flex-shrink-0"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 + 0.7, duration: 0.4 }}
+                  >
+                    <div className="space-y-1">
+                      <div className={`text-sm sm:text-lg font-bold ${
+                        transaction.type === TransactionType.INCOME 
+                          ? "text-green-600" 
+                          : transaction.type === TransactionType.TRANSFER
+                          ? "text-blue-600"
+                          : "text-red-600"
+                      }`}>
+                        {transaction.type === TransactionType.INCOME ? "+" : 
+                         transaction.type === TransactionType.TRANSFER ? "" : "-"}
+                        {formatCurrency(transaction.amount)}
                       </div>
-                    )}
-                  </div>
-                </motion.div>
+                      {transaction.type === TransactionType.TRANSFER && transaction.transferFee && transaction.transferFee > 0 && (
+                        <div className="text-xs text-red-600">
+                          Fee: {formatCurrency(transaction.transferFee)}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                  
+                  {transaction.type !== TransactionType.TRANSFER && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 + 0.8, duration: 0.4 }}
+                    >
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditTransaction(transaction)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => setDeleteTransaction(transaction)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
       ))}
+      
+      <EditTransactionDialog
+        transaction={editTransaction}
+        wallets={wallets}
+        open={!!editTransaction}
+        onOpenChange={(open) => !open && setEditTransaction(null)}
+        onSuccess={() => {
+          setEditTransaction(null)
+          onTransactionUpdate?.()
+        }}
+      />
+      
+      <DeleteTransactionDialog
+        transaction={deleteTransaction}
+        open={!!deleteTransaction}
+        onOpenChange={(open) => !open && setDeleteTransaction(null)}
+        onSuccess={() => {
+          setDeleteTransaction(null)
+          onTransactionUpdate?.()
+        }}
+      />
     </motion.div>
   )
 }

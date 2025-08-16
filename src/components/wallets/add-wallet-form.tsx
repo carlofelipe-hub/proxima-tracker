@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 const walletSchema = z.object({
   name: z.string().min(1, "Wallet name is required"),
@@ -87,11 +88,13 @@ export function AddWalletForm({ open, onOpenChange, onSuccess }: AddWalletFormPr
         throw new Error("Failed to create wallet")
       }
 
+      toast.success(`"${data.name}" wallet has been created successfully!`)
       form.reset()
       onOpenChange(false)
       onSuccess()
     } catch (error) {
       console.error("Error creating wallet:", error)
+      toast.error("Failed to create wallet. Please try again.")
     } finally {
       setIsLoading(false)
     }

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 const walletSchema = z.object({
   name: z.string().min(1, "Wallet name is required"),
@@ -107,10 +108,12 @@ export function EditWalletForm({ open, onOpenChange, onSuccess, wallet }: EditWa
         throw new Error("Failed to update wallet")
       }
 
+      toast.success(`"${data.name}" wallet has been updated successfully!`)
       onOpenChange(false)
       onSuccess()
     } catch (error) {
       console.error("Error updating wallet:", error)
+      toast.error("Failed to update wallet. Please try again.")
     } finally {
       setIsLoading(false)
     }

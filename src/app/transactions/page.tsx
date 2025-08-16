@@ -133,6 +133,11 @@ export default function TransactionsPage() {
     fetchWallets() // Refresh wallets to get updated balances
   }
 
+  const handleTransactionUpdate = () => {
+    fetchTransactions()
+    fetchWallets() // Refresh wallets to get updated balances
+  }
+
 
 
   const formatCurrency = (amount: number) => {
@@ -338,10 +343,14 @@ export default function TransactionsPage() {
                 {viewMode === 'card' ? (
                   <TransactionList 
                     transactions={paginatedTransactions}
+                    wallets={wallets}
+                    onTransactionUpdate={handleTransactionUpdate}
                   />
                 ) : (
                   <TransactionTable 
                     transactions={paginatedTransactions}
+                    wallets={wallets}
+                    onTransactionUpdate={handleTransactionUpdate}
                   />
                 )}
                 

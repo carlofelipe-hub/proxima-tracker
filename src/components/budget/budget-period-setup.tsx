@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/currency"
 import { getPhilippineDateForInput, addDaysInPhilippineTime, getDaysBetweenInPhilippineTime, fromDateInputToPhilippineTime } from "@/lib/timezone"
+import { toast } from "sonner"
 
 const budgetPeriodSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
@@ -34,34 +35,67 @@ const budgetPeriodSchema = z.object({
 
 type BudgetPeriodFormData = z.infer<typeof budgetPeriodSchema>
 
+interface BudgetPeriod {
+  id: string
+  startDate: string
+  endDate: string
+  totalIncome: number
+  plannedExpenses: number
+  actualExpenses: number
+  isActive: boolean
+  createdAt: string
+}
+
 interface BudgetPeriodSetupProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  editingBudget?: BudgetPeriod | null
 }
 
 export function BudgetPeriodSetup({ 
   open, 
   onOpenChange, 
-  onSuccess 
+  onSuccess,
+  editingBudget = null
 }: BudgetPeriodSetupProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<BudgetPeriodFormData>({
     resolver: zodResolver(budgetPeriodSchema),
     defaultValues: {
-      startDate: getPhilippineDateForInput(), // YYYY-MM-DD format in Philippine time
-      endDate: "", // User needs to set this
-      totalIncome: "",
+      startDate: editingBudget?.startDate.slice(0, 10) || getPhilippineDateForInput(),
+      endDate: editingBudget?.endDate.slice(0, 10) || "",
+      totalIncome: editingBudget?.totalIncome.toString() || "",
     },
   })
+
+  useEffect(() => {
+    if (editingBudget) {
+      form.reset({
+        startDate: editingBudget.startDate.slice(0, 10),
+        endDate: editingBudget.endDate.slice(0, 10),
+        totalIncome: editingBudget.totalIncome.toString(),
+      })
+    } else {
+      form.reset({
+        startDate: getPhilippineDateForInput(),
+        endDate: "",
+        totalIncome: "",
+      })
+    }
+  }, [editingBudget, form])
 
   const onSubmit = async (data: BudgetPeriodFormData) => {
     setIsLoading(true)
     
     try {
-      const response = await fetch("/api/budget-periods", {
-        method: "POST",
+      const isEditing = !!editingBudget
+      const url = isEditing ? `/api/budget-periods/${editingBudget.id}` : "/api/budget-periods"
+      const method = isEditing ? "PUT" : "POST"
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -72,14 +106,16 @@ export function BudgetPeriodSetup({
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create budget period")
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} budget period`)
       }
 
+      toast.success(`Budget period has been ${isEditing ? 'updated' : 'created'} successfully!`)
       form.reset()
       onOpenChange(false)
       onSuccess()
     } catch (error) {
-      console.error("Error creating budget period:", error)
+      console.error(`Error ${editingBudget ? 'updating' : 'creating'} budget period:`, error)
+      toast.error(`Failed to ${editingBudget ? 'update' : 'create'} budget period. Please try again.`)
     } finally {
       setIsLoading(false)
     }
@@ -117,7 +153,7 @@ export function BudgetPeriodSetup({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Set Up Budget Period</DialogTitle>
+          <DialogTitle>{editingBudget ? 'Edit Budget Period' : 'Set Up Budget Period'}</DialogTitle>
           <DialogDescription>
             Configure your budget period to enable time-based affordability checking.
             This helps you know if you can afford expenses until your next paycheck.
@@ -241,7 +277,10 @@ export function BudgetPeriodSetup({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Setting up..." : "Set Budget Period"}
+                {isLoading 
+                  ? (editingBudget ? "Updating..." : "Setting up...") 
+                  : (editingBudget ? "Update Budget Period" : "Set Budget Period")
+                }
               </Button>
             </div>
           </form>

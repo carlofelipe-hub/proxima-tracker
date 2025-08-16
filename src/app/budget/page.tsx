@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/currency"
 import { formatPhilippineDate, getNowInPhilippineTime, getDaysBetweenInPhilippineTime, toPhilippineTime } from "@/lib/timezone"
-import { Calendar, Clock, DollarSign, Plus, TrendingDown, TrendingUp } from "lucide-react"
+import { Calendar, Clock, DollarSign, Plus, TrendingDown, TrendingUp, Edit, Trash2 } from "lucide-react"
 
 interface BudgetPeriod {
   id: string
@@ -44,6 +44,8 @@ export default function BudgetPage() {
   const [showBudgetSetup, setShowBudgetSetup] = useState(false)
   const [showIncomeSetup, setShowIncomeSetup] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [editingIncome, setEditingIncome] = useState<IncomeSource | null>(null)
+  const [editingBudget, setEditingBudget] = useState<BudgetPeriod | null>(null)
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -116,6 +118,44 @@ export default function BudgetPage() {
   }
 
   const currentBudget = getCurrentBudgetInfo()
+
+  const handleDeleteIncome = async (incomeId: string, incomeName: string) => {
+    if (!confirm(`Are you sure you want to delete "${incomeName}"?`)) return
+    
+    try {
+      const response = await fetch(`/api/income-sources/${incomeId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete income source')
+      }
+      
+      await fetchData()
+    } catch (error) {
+      console.error('Error deleting income source:', error)
+      alert('Failed to delete income source. Please try again.')
+    }
+  }
+
+  const handleDeleteBudget = async (budgetId: string) => {
+    if (!confirm('Are you sure you want to delete this budget period?')) return
+    
+    try {
+      const response = await fetch(`/api/budget-periods/${budgetId}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete budget period')
+      }
+      
+      await fetchData()
+    } catch (error) {
+      console.error('Error deleting budget period:', error)
+      alert('Failed to delete budget period. Please try again.')
+    }
+  }
 
   return (
     <>
@@ -279,11 +319,29 @@ export default function BudgetPage() {
                             </div>
                           )}
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">{formatCurrency(income.amount)}</div>
-                          <Badge variant={income.isActive ? "default" : "secondary"}>
-                            {income.isActive ? "Active" : "Inactive"}
-                          </Badge>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(income.amount)}</div>
+                            <Badge variant={income.isActive ? "default" : "secondary"}>
+                              {income.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingIncome(income)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteIncome(income.id, income.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -321,10 +379,28 @@ export default function BudgetPage() {
                             Total Income: {formatCurrency(period.totalIncome)}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <Badge variant={period.isActive ? "default" : "secondary"}>
-                            {period.isActive ? "Active" : "Completed"}
-                          </Badge>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <Badge variant={period.isActive ? "default" : "secondary"}>
+                              {period.isActive ? "Active" : "Completed"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingBudget(period)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteBudget(period.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -337,16 +413,30 @@ export default function BudgetPage() {
         </div>
 
         <BudgetPeriodSetup
-          open={showBudgetSetup}
-          onOpenChange={setShowBudgetSetup}
-          onSuccess={fetchData}
+          open={showBudgetSetup || !!editingBudget}
+          onOpenChange={(open) => {
+            setShowBudgetSetup(open)
+            if (!open) setEditingBudget(null)
+          }}
+          onSuccess={() => {
+            fetchData()
+            setEditingBudget(null)
+          }}
+          editingBudget={editingBudget}
         />
 
         <IncomeSourceSetup
-          open={showIncomeSetup}
-          onOpenChange={setShowIncomeSetup}
-          onSuccess={fetchData}
+          open={showIncomeSetup || !!editingIncome}
+          onOpenChange={(open) => {
+            setShowIncomeSetup(open)
+            if (!open) setEditingIncome(null)
+          }}
+          onSuccess={() => {
+            fetchData()
+            setEditingIncome(null)
+          }}
           wallets={wallets}
+          editingIncome={editingIncome}
         />
       </div>
     </>
