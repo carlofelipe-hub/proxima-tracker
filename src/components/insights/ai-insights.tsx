@@ -113,7 +113,7 @@ export function AIInsights({ className }: AIInsightsProps) {
                     size="sm"
                     onClick={fetchInsights}
                     disabled={isLoading || isClearing}
-                    className="h-8 w-8 p-0 hover:bg-white/50"
+                    className="h-8 w-8 p-0 hover:bg-muted"
                   >
                     {isLoading ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -158,13 +158,13 @@ export function AIInsights({ className }: AIInsightsProps) {
               {[...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="bg-white/60 rounded-xl p-4 animate-pulse"
+                  className="bg-muted rounded-xl p-4 animate-pulse"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-muted-foreground/20 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-muted-foreground/20 rounded w-3/4"></div>
                 </motion.div>
               ))}
             </div>
@@ -172,7 +172,7 @@ export function AIInsights({ className }: AIInsightsProps) {
             <div className="space-y-4">
               {/* Chat Bubble - Summary */}
               <motion.div
-                className="bg-white rounded-2xl rounded-tl-md p-4 shadow-sm border border-white/50"
+                className="bg-card rounded-2xl rounded-tl-md p-4 shadow-sm border border-border"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
@@ -186,7 +186,7 @@ export function AIInsights({ className }: AIInsightsProps) {
 
               {/* Chat Bubble - Recommendations */}
               <motion.div
-                className="bg-white rounded-2xl rounded-tl-md p-4 shadow-sm border border-white/50"
+                className="bg-card rounded-2xl rounded-tl-md p-4 shadow-sm border border-border"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
@@ -215,7 +215,7 @@ export function AIInsights({ className }: AIInsightsProps) {
 
               {/* Chat Bubble - Spending Analysis */}
               <motion.div
-                className="bg-white rounded-2xl rounded-tl-md p-4 shadow-sm border border-white/50"
+                className="bg-card rounded-2xl rounded-tl-md p-4 shadow-sm border border-border"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
@@ -278,7 +278,7 @@ export function AIInsights({ className }: AIInsightsProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-white rounded-2xl p-6 border border-white/50">
+              <div className="bg-card rounded-2xl p-6 border border-border">
                 <div className="text-4xl mb-4">🤗</div>
                 <h3 className="font-bold text-filipino mb-2">Let&apos;s chat about your money!</h3>
                 <p className="text-gray-600 mb-4 text-sm">

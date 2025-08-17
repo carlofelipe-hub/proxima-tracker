@@ -154,7 +154,7 @@ export function BudgetFolder({
                     {Math.round(progress)}%
                   </span>
                 </div>
-                <div className="w-full bg-white/50 rounded-full h-2">
+                <div className="w-full bg-muted/50 rounded-full h-2">
                   <motion.div
                     className={`h-2 rounded-full ${style.accent}`}
                     initial={{ width: 0 }}
@@ -196,7 +196,7 @@ export function BudgetFolder({
         {/* Amount Label on Folder */}
         <div className={`
           absolute bottom-2 right-2 px-2 py-1 
-          bg-white/80 rounded text-xs font-semibold
+          bg-card/80 rounded text-xs font-semibold
           ${style.text} border ${style.border}
         `}>
           <div className="flex items-center gap-1">

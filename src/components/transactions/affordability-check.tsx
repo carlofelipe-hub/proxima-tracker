@@ -213,7 +213,7 @@ export function AffordabilityCheck({
           {result.suggestedWallets.map((wallet) => (
             <div 
               key={wallet.id}
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+              className="flex items-center justify-between p-2 bg-muted rounded-lg"
             >
               <div>
                 <div className="font-medium text-sm">{wallet.name}</div>
@@ -299,12 +299,12 @@ export function AffordabilityCheck({
 
       {/* Time-Based Budget Information */}
       {result.timeBasedInfo && (
-        <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-          <div className="text-sm font-medium text-gray-800">
+        <div className="space-y-3 p-3 bg-muted rounded-lg">
+          <div className="text-sm font-medium text-foreground">
             Budget Timeline
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {result.timeBasedInfo.message}
           </div>
           
@@ -332,7 +332,7 @@ export function AffordabilityCheck({
                 <span>Daily Budget Usage</span>
                 <span>{result.budgetImpact.percentageOfDailyBudget.toFixed(1)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted-foreground/20 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${
                     result.budgetImpact.percentageOfDailyBudget > 100 

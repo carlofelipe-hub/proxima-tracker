@@ -85,7 +85,7 @@ export function AffordabilityChecker({
       case "LOW": return "text-green-600 bg-green-50"
       case "MEDIUM": return "text-yellow-600 bg-yellow-50"
       case "HIGH": return "text-red-600 bg-red-50"
-      default: return "text-gray-600 bg-gray-50"
+      default: return "text-muted-foreground bg-muted"
     }
   }
 
@@ -159,7 +159,7 @@ export function AffordabilityChecker({
                 <span className="font-medium">Affordability Score</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-20 bg-gray-200 rounded-full h-2">
+                <div className="w-20 bg-muted rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-300 ${
                       result.affordabilityScore >= 70 ? 'bg-green-500' :

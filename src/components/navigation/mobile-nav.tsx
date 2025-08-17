@@ -153,7 +153,7 @@ export function MobileNav({
                       relative flex flex-col items-center gap-1 px-3 py-2 rounded-full transition-all duration-300
                       ${isActive 
                         ? "bg-gradient-to-br from-[#007DFE] to-[#0066CC] text-white shadow-lg" 
-                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }
                     `}
                     whileHover={{ scale: 1.05 }}
@@ -168,7 +168,7 @@ export function MobileNav({
                     {/* Active indicator */}
                     {isActive && (
                       <motion.div
-                        className="absolute -bottom-1 left-1/2 w-1 h-1 bg-white rounded-full"
+                        className="absolute -bottom-1 left-1/2 w-1 h-1 bg-primary-foreground rounded-full"
                         layoutId="activeIndicator"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}

@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react"
 import { ReactNode } from "react"
 import { ToastProvider } from "./toast-provider"
+import { ThemeProvider } from "./theme-provider"
 
 interface ProvidersProps {
   children: ReactNode
@@ -10,9 +11,14 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider>
-      {children}
-      <ToastProvider />
-    </SessionProvider>
+    <ThemeProvider
+      defaultTheme="system"
+      storageKey="proxima-theme"
+    >
+      <SessionProvider>
+        {children}
+        <ToastProvider />
+      </SessionProvider>
+    </ThemeProvider>
   )
 }

@@ -61,10 +61,10 @@ export function TransactionList({ transactions, wallets, isLoading, onTransactio
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-32"></div>
-                  <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  <div className="h-4 bg-muted rounded w-32"></div>
+                  <div className="h-3 bg-muted rounded w-24"></div>
                 </div>
-                <div className="h-6 bg-gray-200 rounded w-20"></div>
+                <div className="h-6 bg-muted rounded w-20"></div>
               </div>
             </CardContent>
           </Card>
@@ -162,10 +162,10 @@ export function TransactionList({ transactions, wallets, isLoading, onTransactio
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-base sm:text-lg text-gray-800 truncate">
+                    <h3 className="font-bold text-base sm:text-lg text-foreground truncate">
                       {transaction.category}
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-600 truncate">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {transaction.type === TransactionType.INCOME 
                         ? "Earning money! 💰" 
                         : transaction.type === TransactionType.TRANSFER 
@@ -184,7 +184,7 @@ export function TransactionList({ transactions, wallets, isLoading, onTransactio
                     >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0 hover:bg-gray-100">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0 hover:bg-muted">
                             <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -213,7 +213,7 @@ export function TransactionList({ transactions, wallets, isLoading, onTransactio
               {/* Description */}
               {transaction.description && (
                 <motion.p 
-                  className="text-gray-800 bg-gray-50 rounded-lg p-2 sm:p-3 text-xs sm:text-sm break-words"
+                  className="text-foreground bg-muted rounded-lg p-2 sm:p-3 text-xs sm:text-sm break-words"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.1 + 0.5, duration: 0.3 }}

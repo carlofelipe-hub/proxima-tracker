@@ -66,10 +66,10 @@ export function PlannedExpenseTable({
           <div key={i} className="animate-pulse border rounded-lg p-4">
             <div className="flex justify-between items-center">
               <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-32"></div>
-                <div className="h-3 bg-gray-200 rounded w-24"></div>
+                <div className="h-4 bg-muted rounded w-32"></div>
+                <div className="h-3 bg-muted rounded w-24"></div>
               </div>
-              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-muted rounded w-20"></div>
             </div>
           </div>
         ))}
@@ -107,7 +107,7 @@ export function PlannedExpenseTable({
   const getStatusBadge = (status: PlannedExpense['status']) => {
     switch (status) {
       case 'PLANNED':
-        return <Badge className="bg-gray-100 text-gray-800 text-xs">Planned</Badge>
+        return <Badge className="bg-muted text-foreground text-xs">Planned</Badge>
       case 'SAVED':
         return <Badge className="bg-green-100 text-green-800 text-xs">Saved</Badge>
       case 'COMPLETED':
@@ -137,10 +137,10 @@ export function PlannedExpenseTable({
           size="sm"
           variant="outline"
           onClick={() => onUpdateStatus(expense.id, 'SAVED')}
-          className="h-8 px-3 text-xs flex-1 min-w-0"
+          className="h-10 px-5 text-sm min-w-[110px] hover:bg-green-50 border-green-200"
         >
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Saved
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Mark as Saved
         </Button>
       )
     }
@@ -152,10 +152,40 @@ export function PlannedExpenseTable({
           size="sm"
           variant="outline"
           onClick={() => onUpdateStatus(expense.id, 'COMPLETED')}
-          className="h-8 px-3 text-xs flex-1 min-w-0"
+          className="h-10 px-5 text-sm min-w-[130px] hover:bg-blue-50 border-blue-200"
         >
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Done
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Mark as Complete
+        </Button>
+      )
+    }
+
+    if (expense.status === 'PLANNED' || expense.status === 'SAVED') {
+      actions.push(
+        <Button
+          key="postponed"
+          size="sm"
+          variant="outline"
+          onClick={() => onUpdateStatus(expense.id, 'POSTPONED')}
+          className="h-10 px-5 text-sm min-w-[100px] hover:bg-yellow-50 border-yellow-200"
+        >
+          <Calendar className="h-4 w-4 mr-2" />
+          Postpone
+        </Button>
+      )
+    }
+
+    if (expense.status === 'PLANNED' || expense.status === 'SAVED') {
+      actions.push(
+        <Button
+          key="cancelled"
+          size="sm"
+          variant="outline"
+          onClick={() => onUpdateStatus(expense.id, 'CANCELLED')}
+          className="h-10 px-5 text-sm min-w-[90px] hover:bg-gray-50 border-gray-200"
+        >
+          <Target className="h-4 w-4 mr-2" />
+          Cancel
         </Button>
       )
     }
@@ -171,28 +201,28 @@ export function PlannedExpenseTable({
   return (
     <div className="rounded-md border overflow-hidden">
       {/* Mobile Card View */}
-      <div className="block md:hidden space-y-3 p-4">
+      <div className="block md:hidden space-y-4 p-4">
         {expenses.map((expense) => {
           const daysUntilTarget = getDaysUntilTarget(expense.targetDate)
           const isOverdue = daysUntilTarget < 0
           const isUpcoming = daysUntilTarget <= 7 && daysUntilTarget >= 0
           
           return (
-            <div key={expense.id} className={`border rounded-lg p-4 space-y-3 ${
-              isOverdue ? 'border-l-4 border-l-red-500 bg-red-50' : 
-              isUpcoming ? 'border-l-4 border-l-yellow-500 bg-yellow-50' : 
-              'bg-white'
+            <div key={expense.id} className={`border rounded-lg p-4 space-y-4 shadow-sm hover:shadow-md transition-shadow ${
+              isOverdue ? 'border-l-4 border-l-red-500 bg-red-50/50' : 
+              isUpcoming ? 'border-l-4 border-l-yellow-500 bg-yellow-50/50' : 
+              'bg-card'
             }`}>
               {/* Header */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base leading-tight truncate">{expense.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{expense.category}</p>
+                  <h3 className="font-semibold text-lg leading-tight mb-1">{expense.title}</h3>
+                  <p className="text-sm text-muted-foreground">{expense.category}</p>
                 </div>
-                <div className="text-right ml-3">
-                  <div className="font-bold text-lg text-blue-600">{formatCurrency(expense.amount)}</div>
+                <div className="text-right">
+                  <div className="font-bold text-xl text-blue-600">{formatCurrency(expense.amount)}</div>
                   {expense.wallet && (
-                    <div className="text-xs text-muted-foreground">{expense.wallet.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{expense.wallet.name}</div>
                   )}
                 </div>
               </div>
@@ -200,18 +230,32 @@ export function PlannedExpenseTable({
               {/* Badges */}
               <div className="flex flex-wrap gap-2">
                 {getPriorityBadge(expense.priority)}
+                <Badge className={`text-xs ${
+                  expense.confidenceLevel === 'HIGH' ? 'bg-green-100 text-green-800' :
+                  expense.confidenceLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {expense.confidenceLevel === 'HIGH' ? 'High Confidence' :
+                   expense.confidenceLevel === 'MEDIUM' ? 'Medium Confidence' :
+                   'Low Confidence'}
+                </Badge>
+                <Badge variant="outline" className="text-xs">{expense.category}</Badge>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center">
                 {getStatusBadge(expense.status)}
               </div>
 
               {/* Date and Description */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>{formatPhilippineDate(expense.targetDate)}</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     isOverdue ? 'bg-red-100 text-red-700' : 
                     isUpcoming ? 'bg-yellow-100 text-yellow-700' : 
-                    'bg-gray-100 text-gray-600'
+                    'bg-muted text-muted-foreground'
                   }`}>
                     {isOverdue ? `${Math.abs(daysUntilTarget)}d overdue` : 
                        daysUntilTarget === 0 ? 'Today' : 
@@ -232,7 +276,7 @@ export function PlannedExpenseTable({
                       {Math.round((expense.spentAmount / expense.amount) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all duration-300 ${
                         expense.spentAmount >= expense.amount 
@@ -248,7 +292,7 @@ export function PlannedExpenseTable({
               )}
 
               {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-6 pt-6">
                 {getQuickActions(expense)}
                 <EditPlannedExpenseDialog
                   expense={expense}
@@ -257,11 +301,12 @@ export function PlannedExpenseTable({
                 />
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => onDeleteExpense(expense.id)}
-                  className="h-8 px-2 text-red-600 hover:text-red-700"
+                  className="h-10 px-5 text-sm min-w-[90px] text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
                 </Button>
               </div>
             </div>
@@ -358,7 +403,7 @@ export function PlannedExpenseTable({
                   <TableCell className="hidden lg:table-cell">
                     {expense.spentAmount > 0 ? (
                       <div className="space-y-1">
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div className="w-full bg-muted rounded-full h-1.5">
                           <div 
                             className={`h-1.5 rounded-full transition-all duration-300 ${
                               expense.spentAmount >= expense.amount 

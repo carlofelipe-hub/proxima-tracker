@@ -264,13 +264,13 @@ export default function PlannedExpensesPage() {
       actions.push(
         <Button
           key="saved"
-          size="default"
+          size="sm"
           variant="outline"
           onClick={() => updateExpenseStatus(expense.id, 'SAVED')}
-          className="h-9 px-3 flex-1 min-w-0"
+          className="h-10 px-4 text-sm min-w-[120px] hover:bg-green-50 border-green-200"
         >
-          <CheckCircle className="h-4 w-4 mr-1" />
-          <span className="hidden sm:inline">Mark as </span>Saved
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Mark as Saved
         </Button>
       )
     }
@@ -279,24 +279,24 @@ export default function PlannedExpensesPage() {
       actions.push(
         <Button
           key="completed"
-          size="default"
+          size="sm"
           variant="outline"
           onClick={() => updateExpenseStatus(expense.id, 'COMPLETED')}
-          className="h-9 px-3 flex-1 min-w-0"
+          className="h-10 px-4 text-sm min-w-[140px] hover:bg-blue-50 border-blue-200"
         >
-          <CheckCircle className="h-4 w-4 mr-1" />
-          <span className="hidden sm:inline">Mark as </span>Done
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Mark as Complete
         </Button>
       )
       actions.push(
         <Button
           key="postponed"
-          size="default"
+          size="sm"
           variant="outline"
           onClick={() => updateExpenseStatus(expense.id, 'POSTPONED')}
-          className="h-9 px-3 flex-1 min-w-0"
+          className="h-10 px-4 text-sm min-w-[100px] hover:bg-yellow-50 border-yellow-200"
         >
-          <Pause className="h-4 w-4 mr-1" />
+          <Pause className="h-4 w-4 mr-2" />
           Postpone
         </Button>
       )
@@ -306,12 +306,12 @@ export default function PlannedExpensesPage() {
       actions.push(
         <Button
           key="cancelled"
-          size="default"
+          size="sm"
           variant="outline"
           onClick={() => updateExpenseStatus(expense.id, 'CANCELLED')}
-          className="h-9 px-3 flex-1 min-w-0 text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+          className="h-10 px-4 text-sm min-w-[90px] text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
         >
-          <XCircle className="h-4 w-4 mr-1" />
+          <XCircle className="h-4 w-4 mr-2" />
           Cancel
         </Button>
       )
@@ -661,12 +661,8 @@ export default function PlannedExpensesPage() {
                             )}
                             
                             {/* Mobile-Optimized Action Buttons */}
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              {getStatusActions(expense).map((action, index) => (
-                                <div key={index} className="flex-1 min-w-0">
-                                  {action}
-                                </div>
-                              ))}
+                            <div className="flex flex-wrap gap-4 pt-4">
+                              {getStatusActions(expense)}
                               <EditPlannedExpenseDialog
                                 expense={expense}
                                 wallets={wallets}
@@ -676,10 +672,10 @@ export default function PlannedExpensesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => deleteExpense(expense.id)}
-                                className="h-9 px-3 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                                className="h-10 px-4 text-sm min-w-[90px] text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                               >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                <span className="hidden sm:inline">Delete</span>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
                               </Button>
                             </div>
                           </CardContent>
@@ -689,39 +685,14 @@ export default function PlannedExpensesPage() {
                   </div>
                 </div>
                 
-                {/* Mobile-Optimized Pagination */}
+                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex flex-col items-center gap-4 pt-6">
                     <div className="text-sm text-muted-foreground text-center px-4 py-2 bg-gray-50 rounded-lg">
                       Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedExpenses.length)} of {filteredAndSortedExpenses.length} expenses
                     </div>
-                    <div className="flex items-center justify-center gap-2 w-full max-w-sm">
-                      <Button
-                        variant="outline"
-                        size="default"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="flex-1 h-11"
-                      >
-                        Previous
-                      </Button>
-                      <div className="flex items-center gap-1 px-3">
-                        <span className="text-sm font-medium">{currentPage}</span>
-                        <span className="text-sm text-muted-foreground">of</span>
-                        <span className="text-sm font-medium">{totalPages}</span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="default"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="flex-1 h-11"
-                      >
-                        Next
-                      </Button>
-                    </div>
-                    {/* Show page numbers on larger screens */}
-                    <div className="hidden sm:flex items-center gap-1">
+                    {/* Numbered pagination */}
+                    <div className="flex items-center gap-1">
                       {Array.from({ length: totalPages }, (_, i) => i + 1)
                         .filter(page => {
                           const showPage = page === 1 || page === totalPages || 
@@ -737,7 +708,7 @@ export default function PlannedExpensesPage() {
                                 variant={currentPage === page ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setCurrentPage(page)}
-                                className="w-9 h-9 p-0"
+                                className="w-10 h-10 p-0 text-sm"
                               >
                                 {page}
                               </Button>

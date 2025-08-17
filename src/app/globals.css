@@ -96,24 +96,24 @@
 }
 
 .dark {
-  /* Base backgrounds - darker theme with new palette */
-  --background: #2A2A2A;
-  --background-secondary: #3A3A3A;
-  --foreground: #edd2e0;
-  --card: #3A3A3A;
-  --card-foreground: #edd2e0;
-  --popover: #3A3A3A;
-  --popover-foreground: #edd2e0;
+  /* Base backgrounds - proper dark theme */
+  --background: #0a0a0a;
+  --background-secondary: #1a1a1a;
+  --foreground: #fafafa;
+  --card: #1a1a1a;
+  --card-foreground: #fafafa;
+  --popover: #1a1a1a;
+  --popover-foreground: #fafafa;
   
   /* Primary colors adapted for dark mode */
   --primary: #dbabbb;
-  --primary-foreground: #2A2A2A;
-  --secondary: #2A3A3A;
-  --secondary-foreground: #E8E8E8;
-  --muted: #3A3A2A;
-  --muted-foreground: #B8B8B8;
-  --accent: #2A3A2A;
-  --accent-foreground: #E8E8E8;
+  --primary-foreground: #0a0a0a;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1aa;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
   
   /* Philippine flag accents (same) */
   --philippine-blue: #0038A8;
@@ -134,17 +134,17 @@
   --status-warning: #FAB005;
   
   /* Text colors for dark mode */
-  --text-primary: #E8E8E8;
-  --text-secondary: #B8B8B8;
-  --text-muted: #888888;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
   --text-money: #4ECB71;
   
   /* System colors */
-  --destructive: #FF6B6B;
-  --destructive-foreground: #1A1A1A;
-  --border: #3A3A3A;
-  --input: #3A3A3A;
-  --ring: #007DFE;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #262626;
+  --input: #262626;
+  --ring: #dbabbb;
   
   /* Chart colors using wallet colors (same) */
   --chart-1: #007DFE;
@@ -154,14 +154,14 @@
   --chart-5: #9B59B6;
   
   /* Sidebar for dark mode */
-  --sidebar: #2A2A2A;
-  --sidebar-foreground: #B8B8B8;
-  --sidebar-primary: #007DFE;
-  --sidebar-primary-foreground: #1A1A1A;
-  --sidebar-accent: #3A2A2A;
-  --sidebar-accent-foreground: #E8E8E8;
-  --sidebar-border: #3A3A3A;
-  --sidebar-ring: #007DFE;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-primary: #dbabbb;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #262626;
+  --sidebar-ring: #dbabbb;
   
   /* Typography system (same fonts) */
   --font-sans: "Poppins", system-ui, -apple-system, sans-serif;
