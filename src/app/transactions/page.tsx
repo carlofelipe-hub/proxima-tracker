@@ -11,7 +11,10 @@ import { AddTransactionForm } from "@/components/transactions/add-transaction-fo
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Receipt, TrendingUp, TrendingDown, Calendar, Filter, Grid3X3, List } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Plus, Receipt, TrendingUp, TrendingDown, Calendar, Filter, Grid3X3, List, CalendarDays } from "lucide-react"
+import { format } from "date-fns"
 
 interface Transaction {
   id: string
@@ -60,6 +63,8 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [filterType, setFilterType] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<string>('all')
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined)
   const [sortBy, setSortBy] = useState<string>('date-desc')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
@@ -67,7 +72,75 @@ export default function TransactionsPage() {
   // Reset current page when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterType, sortBy])
+  }, [filterType, dateRange, customDate, sortBy])
+
+  // Date filtering helper functions
+  const getDateRangeFilter = useCallback((range: string) => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    switch (range) {
+      case 'today':
+        const todayStart = new Date(today)
+        const todayEnd = new Date(today)
+        todayEnd.setDate(todayEnd.getDate() + 1)
+        return { start: todayStart, end: todayEnd }
+      
+      case 'yesterday':
+        const yesterdayStart = new Date(today)
+        yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+        const yesterdayEnd = new Date(today)
+        return { start: yesterdayStart, end: yesterdayEnd }
+      
+      case 'this-week':
+        const weekStart = new Date(today)
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekEnd.getDate() + 7)
+        return { start: weekStart, end: weekEnd }
+      
+      case 'last-week':
+        const lastWeekStart = new Date(today)
+        lastWeekStart.setDate(lastWeekStart.getDate() - lastWeekStart.getDay() - 7)
+        const lastWeekEnd = new Date(lastWeekStart)
+        lastWeekEnd.setDate(lastWeekEnd.getDate() + 7)
+        return { start: lastWeekStart, end: lastWeekEnd }
+      
+      case 'this-month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        return { start: monthStart, end: monthEnd }
+      
+      case 'last-month':
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1)
+        return { start: lastMonthStart, end: lastMonthEnd }
+      
+      case 'last-7-days':
+        const last7Start = new Date(today)
+        last7Start.setDate(last7Start.getDate() - 7)
+        const last7End = new Date(today)
+        last7End.setDate(last7End.getDate() + 1)
+        return { start: last7Start, end: last7End }
+      
+      case 'last-30-days':
+        const last30Start = new Date(today)
+        last30Start.setDate(last30Start.getDate() - 30)
+        const last30End = new Date(today)
+        last30End.setDate(last30End.getDate() + 1)
+        return { start: last30Start, end: last30End }
+      
+      case 'custom':
+        if (!customDate) return null
+        const customStart = new Date(customDate.getFullYear(), customDate.getMonth(), customDate.getDate())
+        const customEnd = new Date(customStart)
+        customEnd.setDate(customEnd.getDate() + 1)
+        return { start: customStart, end: customEnd }
+      
+      default:
+        return null
+    }
+  }, [customDate])
 
   const calculateStats = useCallback((transactions: Transaction[]) => {
     const totalIncome = transactions
@@ -104,14 +177,13 @@ export default function TransactionsPage() {
       if (response.ok) {
         const data = await response.json()
         setTransactions(data.transactions)
-        calculateStats(data.transactions)
       }
     } catch (error) {
       console.error("Failed to fetch transactions:", error)
     } finally {
       setLoading(false)
     }
-  }, [calculateStats])
+  }, [])
 
   useEffect(() => {
     if (session) {
@@ -119,6 +191,31 @@ export default function TransactionsPage() {
       fetchTransactions()
     }
   }, [session, fetchWallets, fetchTransactions])
+
+  // Calculate stats based on filtered transactions
+  useEffect(() => {
+    const filteredTransactions = transactions
+      .filter(transaction => {
+        // Apply type filter
+        if (filterType !== 'all' && transaction.type !== filterType.toUpperCase()) {
+          return false
+        }
+        return true
+      })
+      .filter(transaction => {
+        // Apply date range filter
+        if (dateRange === 'all') return true
+        if (dateRange === 'custom' && !customDate) return true
+        
+        const dateFilter = getDateRangeFilter(dateRange)
+        if (!dateFilter) return true
+        
+        const transactionDate = new Date(transaction.date)
+        return transactionDate >= dateFilter.start && transactionDate < dateFilter.end
+      })
+    
+    calculateStats(filteredTransactions)
+  }, [transactions, filterType, dateRange, customDate, calculateStats, getDateRangeFilter])
 
   if (status === "loading") {
     return <div>Loading...</div>
@@ -147,8 +244,22 @@ export default function TransactionsPage() {
   // Filter and sort transactions
   const filteredAndSortedTransactions = transactions
     .filter(transaction => {
-      if (filterType === 'all') return true
-      return transaction.type === filterType.toUpperCase()
+      // Apply type filter
+      if (filterType !== 'all' && transaction.type !== filterType.toUpperCase()) {
+        return false
+      }
+      return true
+    })
+    .filter(transaction => {
+      // Apply date range filter
+      if (dateRange === 'all') return true
+      if (dateRange === 'custom' && !customDate) return true
+      
+      const dateFilter = getDateRangeFilter(dateRange)
+      if (!dateFilter) return true
+      
+      const transactionDate = new Date(transaction.date)
+      return transactionDate >= dateFilter.start && transactionDate < dateFilter.end
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -279,9 +390,67 @@ export default function TransactionsPage() {
                   </Button>
                 </div>
 
-                {/* Filter Dropdown */}
+                {/* Date Range Filter */}
+                <Select 
+                  value={dateRange} 
+                  onValueChange={(value) => {
+                    setDateRange(value)
+                    if (value !== 'custom') {
+                      setCustomDate(undefined)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-32 sm:w-36">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="this-week">This Week</SelectItem>
+                    <SelectItem value="last-week">Last Week</SelectItem>
+                    <SelectItem value="last-7-days">Last 7 Days</SelectItem>
+                    <SelectItem value="this-month">This Month</SelectItem>
+                    <SelectItem value="last-month">Last Month</SelectItem>
+                    <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                    <SelectItem value="custom">Custom Date</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Custom Date Picker */}
+                {dateRange === 'custom' && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-32 sm:w-40 justify-start text-left font-normal"
+                      >
+                        <CalendarDays className="mr-2 h-3 w-3" />
+                        {customDate ? (
+                          format(customDate, "MMM dd, yyyy")
+                        ) : (
+                          <span className="text-muted-foreground">Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={customDate}
+                        onSelect={setCustomDate}
+                        disabled={(date) => 
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                {/* Type Filter */}
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-24 sm:w-28">
                     <Filter className="h-3 w-3 mr-1" />
                     <SelectValue />
                   </SelectTrigger>
